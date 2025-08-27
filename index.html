@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Registro de Trabajo Remoto</title>
+    <link rel="stylesheet" href="styles.css" />
+    <!-- Favicon opcional -->
+    <link rel="icon" href="data:;base64,iVBORw0KGgo=">
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1>Dashboard de Trabajo Remoto</h1>
+            <p>Registra tus horas, planifica tu semana y sigue tu progreso</p>
+        </header>
+
+        <main class="main-content">
+            <!-- Sección de Registro de Horas -->
+            <section class="card horas-trabajo">
+                <h2>Registro de Horas</h2>
+                <form id="formulario-horas">
+                    <div class="form-group">
+                        <label for="fecha">Fecha</label>
+                        <input type="date" id="fecha" required />
+                    </div>
+                    <div class="form-group">
+                        <label for="hora-entrada">Hora de Entrada</label>
+                        <input type="time" id="hora-entrada" required />
+                    </div>
+                    <div class="form-group">
+                        <label for="hora-salida">Hora de Salida</label>
+                        <input type="time" id="hora-salida" required />
+                    </div>
+                    <button type="submit" class="btn btn-primary">Registrar Horas</button>
+                </form>
+
+                <div class="resumen-horas">
+                    <h3>Resumen Semanal</h3>
+                    <p>Total de horas esta semana: <span id="total-horas">0</span></p>
+                </div>
+
+                <div class="historial-horas">
+                    <h3>Historial Semanal</h3>
+                    <ul id="lista-horas" class="lista-horas">
+                        <li class="registro-hora"><em>Sin registros aún.</em></li>
+                    </ul>
+                </div>
+            </section>
+
+            <!-- Sección de Plan de Acción Semanal -->
+            <section class="card plan-accion">
+                <h2>Plan de Acción Semanal</h2>
+                <form id="formulario-plan">
+                    <div class="form-group">
+                        <label for="tarea">Nueva Tarea</label>
+                        <input type="text" id="tarea" placeholder="Escribe una tarea..." required />
+                    </div>
+                    <div class="form-group">
+                        <label for="prioridad">Prioridad</label>
+                        <select id="prioridad">
+                            <option value="baja">Baja</option>
+                            <option value="media">Media</option>
+                            <option value="alta">Alta</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Agregar Tarea</button>
+                </form>
+
+                <ul id="lista-tareas" class="tareas-lista">
+                    <!-- Generado dinámicamente -->
+                </ul>
+            </section>
+
+            <!-- Sección de Indicador de Progreso -->
+            <section class="card progreso">
+                <h2>Indicador de Progreso</h2>
+                <div class="progreso-contenedor">
+                    <svg class="progreso-circular" width="150" height="150" viewBox="0 0 150 150">
+                        <circle class="fondo-circular" cx="75" cy="75" r="60" />
+                        <circle class="progreso-circular-fill" cx="75" cy="75" r="60" />
+                    </svg>
+                    <div class="porcentaje">
+                        <span id="porcentaje-progreso">0%</span>
+                    </div>
+                </div>
+                <p>Completaste <span id="tareas-completadas">0</span> de <span id="total-tareas">0</span> tareas</p>
+            </section>
+        </main>
+
+        <footer class="footer">
+            <p>&copy; 2025 Registro de Trabajo Remoto. Todos los derechos reservados.</p>
+        </footer>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
