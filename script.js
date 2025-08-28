@@ -174,6 +174,7 @@ function actualizarProgreso() {
 
 // Renderizar historial
 // Función para renderizar el historial de horas (semana completa)
+// Función: renderizarHistorialHoras – Muestra TODOS los registros, sin filtrar por semana
 function renderizarHistorialHoras() {
     const lista = document.getElementById('lista-horas');
     if (!lista) {
@@ -188,34 +189,30 @@ function renderizarHistorialHoras() {
         return;
     }
 
-    // Obtener inicio de la semana (lunes)
-    const hoy = new Date();
-    const diaSemana = hoy.getDay();
-    const inicioSemana = new Date(hoy);
-    inicioSemana.setHours(0, 0, 0, 0);
-    inicioSemana.setDate(hoy.getDate() - (diaSemana === 0 ? 6 : diaSemana - 1)); // Lunes
+    // Ordenar de más reciente a más antiguo
+    const registrosOrdenados = [...horasTrabajadas].sort(
+        (a, b) => new Date(b.fecha) - new Date(a.fecha)
+    );
 
-    // Filtrar registros de esta semana
-    const registrosSemana = horasTrabajadas.filter(registro => {
-        const fecha = new Date(registro.fecha);
-        return fecha >= inicioSemana && fecha <= hoy;
-    });
+    registrosOrdenados.forEach(registro => {
+        // Validar que el registro tenga datos válidos
+        if (!registro.horaEntrada || !registro.horaSalida) return;
 
-    if (registrosSemana.length === 0) {
-        lista.innerHTML = '<li class="registro-hora"><em>No hay registros esta semana.</em></li>';
-        return;
-    }
-
-    // Ordenar por fecha (más reciente primero)
-    registrosSemana.sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
-
-    registrosSemana.forEach(registro => {
         const entrada = new Date(`2023-01-01 ${registro.horaEntrada}`);
         const salida = new Date(`2023-01-01 ${registro.horaSalida}`);
+
+        // Validar que las horas sean válidas
+        if (isNaN(entrada.getTime()) || isNaN(salida.getTime())) return;
+
         const minutos = Math.floor((salida - entrada) / (1000 * 60));
+        if (minutos <= 0) return; // Evitar horas negativas
+
         const horas = Math.floor(minutos / 60);
         const restoMinutos = minutos % 60;
         const duracion = `${horas}h ${restoMinutos}m`;
+
+        // Formatear fecha legible: "22 abr 2025"
+        const fechaLegible = formatearFechaLegible(registro.fecha);
 
         const li = document.createElement('li');
         li.className = 'registro-hora';
@@ -223,14 +220,40 @@ function renderizarHistorialHoras() {
             <div class="detalle">
                 <strong>${registro.horaEntrada}</strong> - <strong>${registro.horaSalida}</strong>
                 <br>
-                <small>${duracion} | ${registro.fecha}</small>
+                <small>${duracion} | ${fechaLegible}</small>
             </div>
             <button class="accion" onclick="eliminarRegistroHora(${registro.id})">Eliminar</button>
         `;
         lista.appendChild(li);
     });
 
-    console.log("✅ Historial renderizado:", registrosSemana);
+    console.log("✅ Historial completo renderizado:", registrosOrdenados);
+}
+
+// Función auxiliar para formatear fechas de forma legible
+function formatearFechaLegible(fechaStr) {
+    const opciones = { day: '2-digit', month: 'short', year: 'numeric' };
+    const fecha = new Date(fechaStr);
+    
+    // Verificar si la fecha es válida
+    if (isNaN(fecha.getTime())) return 'Fecha inválida';
+
+    // Formato: "22 abr 2025"
+    return new Intl.DateTimeFormat('es-ES', opciones)
+        .format(fecha)
+        .replace('.', '') // Quitar el punto de "abr."
+        .replace('ene', 'ene')
+        .replace('feb', 'feb')
+        .replace('mar', 'mar')
+        .replace('abr', 'abr')
+        .replace('may', 'may')
+        .replace('jun', 'jun')
+        .replace('jul', 'jul')
+        .replace('ago', 'ago')
+        .replace('sep', 'sep')
+        .replace('oct', 'oct')
+        .replace('nov', 'nov')
+        .replace('dic', 'dic');
 }
 
 // Eliminar hora
