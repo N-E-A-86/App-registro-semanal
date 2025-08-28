@@ -46,8 +46,25 @@
                         <li class="registro-hora"><em>Sin registros aún.</em></li>
                     </ul>
                 </div>
-            </section>
 
+                <!-- Enlace para mostrar/ocultar historial mensual -->
+<div class="enlace-historial">
+    <button type="button" class="btn-link" onclick="toggleHistorialMensual()">
+        ▶ Historial Mensual
+    </button>
+</div>
+
+<!-- Contenedor oculto del historial mensual -->
+<div id="contenedor-historial-mensual" class="historial-mensual oculto">
+    <p>Registros del mes actual</p>
+    <ul id="lista-historial-mensual" class="lista-horas">
+        <!-- Generado dinámicamente -->
+    </ul>
+</div>
+
+                
+            </section>
+    
             <!-- Sección de Plan de Acción Semanal -->
             <section class="card plan-accion">
                 <h2>Plan de Acción Semanal</h2>
@@ -71,6 +88,14 @@
                     <!-- Generado dinámicamente -->
                 </ul>
             </section>
+                            <!-- Sección: Historial Mensual -->
+<!-- <section class="card historial-mensual">
+    <h2>Historial Mensual</h2>
+    <p>Registros de todo el mes actual</p>
+    <ul id="lista-historial-mensual" class="lista-horas"> -->
+        <!-- Generado dinámicamente -->
+    <!-- </ul>
+</section> -->
 
             <!-- Sección de Indicador de Progreso -->
             <section class="card progreso">

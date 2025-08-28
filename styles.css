@@ -166,6 +166,49 @@ body {
     border: 1px solid var(--error);
     border-radius: 4px;
 }
+/* Historial Mensual */
+.historial-mensual h2 {
+    color: var(--acento);
+    margin-bottom: 10px;
+    font-size: 1.4rem;
+}
+
+.historial-mensual p {
+    color: var(--texto-secundario);
+    font-size: 0.9rem;
+    margin-bottom: 15px;
+}
+
+/* Reutilizamos estilos de lista de horas */
+.lista-horas {
+    list-style: none;
+    margin-top: 10px;
+}
+
+.registro-hora {
+    background-color: var(--fondo-oscuro);
+    padding: 10px;
+    border-radius: 6px;
+    margin-bottom: 8px;
+    font-size: 0.95rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.registro-hora .detalle {
+    flex-grow: 1;
+}
+
+.registro-hora .accion {
+    color: var(--error);
+    cursor: pointer;
+    font-size: 0.9rem;
+    padding: 4px 8px;
+    background: none;
+    border: 1px solid var(--error);
+    border-radius: 4px;
+}
 
 /* Lista de tareas */
 .tareas-lista {
@@ -313,4 +356,59 @@ body {
 
 .card {
     animation: fadeIn 0.5s ease-in;
+}
+
+/* Enlace para mostrar historial mensual */
+.enlace-historial {
+    margin-top: 15px;
+}
+
+.btn-link {
+    background: none;
+    border: none;
+    color: var(--acento);
+    font-size: 1.1rem;
+    font-weight: bold;
+    cursor: pointer;
+    text-align: left;
+    padding: 5px 0;
+    transition: color 0.2s;
+}
+
+.btn-link:hover {
+    color: #00d8b8;
+    text-decoration: underline;
+}
+
+/* Historial mensual (oculto por defecto) */
+.historial-mensual {
+    margin-top: 10px;
+    padding: 10px;
+    background-color: rgba(0, 191, 165, 0.08);
+    border-radius: 8px;
+    border: 1px solid var(--borde);
+}
+
+.historial-mensual p {
+    color: var(--texto-secundario);
+    font-size: 0.9rem;
+    margin-bottom: 10px;
+}
+
+/* Clase para ocultar */
+.oculto {
+    display: none;
+}
+
+/* Icono de flecha dinámico */
+.btn-link::before {
+    display: inline-block;
+    content: "▶";
+    margin-right: 6px;
+    font-size: 0.9em;
+    transition: transform 0.2s;
+}
+
+.btn-link.expandido::before {
+    transform: rotate(90deg);
 }
