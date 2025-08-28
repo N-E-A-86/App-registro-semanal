@@ -1,5 +1,6 @@
 /* styles.css */
-/* Diseño moderno y minimalista con fondo oscuro */
+/* Registro de Trabajo Remoto - Dashboard */
+/* Diseño moderno, minimalista, responsive y con modo oscuro */
 
 :root {
     --fondo-oscuro: #121212;
@@ -32,6 +33,7 @@ body {
     padding: 20px;
 }
 
+/* === HEADER === */
 .header {
     text-align: center;
     margin-bottom: 30px;
@@ -47,12 +49,14 @@ body {
     font-size: 1rem;
 }
 
+/* === GRID LAYOUT === */
 .main-content {
     display: grid;
     grid-template-columns: 1fr;
     gap: 20px;
 }
 
+/* === TARJETAS GENERALES === */
 .card {
     background-color: var(--fondo-medio);
     border-radius: 12px;
@@ -73,7 +77,17 @@ body {
     padding-bottom: 10px;
 }
 
-/* Formularios */
+/* Animación de entrada */
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.card {
+    animation: fadeIn 0.5s ease-in;
+}
+
+/* === FORMULARIOS === */
 .form-group {
     margin-bottom: 15px;
 }
@@ -96,6 +110,7 @@ body {
     font-size: 1rem;
 }
 
+/* Botones */
 .btn {
     padding: 10px 15px;
     border: none;
@@ -114,7 +129,7 @@ body {
     background-color: var(--acento-oscuro);
 }
 
-/* Resumen de horas */
+/* === SECCIÓN: HORAS DE TRABAJO === */
 .resumen-horas {
     margin-top: 20px;
     padding: 15px;
@@ -128,7 +143,7 @@ body {
     color: var(--acento);
 }
 
-/* Historial de horas */
+/* Historial Semanal */
 .historial-horas h3 {
     margin: 20px 0 10px 0;
     color: var(--acento);
@@ -137,49 +152,55 @@ body {
     padding-bottom: 5px;
 }
 
-.lista-horas {
-    list-style: none;
-    margin-top: 10px;
+/* Historial Mensual (colapsable) */
+.enlace-historial {
+    margin-top: 15px;
 }
 
-.registro-hora {
-    background-color: var(--fondo-oscuro);
-    padding: 10px;
-    border-radius: 6px;
-    margin-bottom: 8px;
-    font-size: 0.95rem;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-.registro-hora .detalle {
-    flex-grow: 1;
-}
-
-.registro-hora .accion {
-    color: var(--error);
-    cursor: pointer;
-    font-size: 0.9rem;
-    padding: 4px 8px;
+.btn-link {
     background: none;
-    border: 1px solid var(--error);
-    border-radius: 4px;
-}
-/* Historial Mensual */
-.historial-mensual h2 {
+    border: none;
     color: var(--acento);
-    margin-bottom: 10px;
-    font-size: 1.4rem;
+    font-size: 1.1rem;
+    font-weight: bold;
+    cursor: pointer;
+    text-align: left;
+    padding: 5px 0;
+    transition: color 0.2s;
 }
 
-.historial-mensual p {
+.btn-link:hover {
+    color: #00d8b8;
+    text-decoration: underline;
+}
+
+.btn-link::before {
+    display: inline-block;
+    content: "▶";
+    margin-right: 6px;
+    font-size: 0.9em;
+    transition: transform 0.2s;
+}
+
+.btn-link.expandido::before {
+    transform: rotate(90deg);
+}
+
+#contenedor-historial-mensual {
+    margin-top: 10px;
+    padding: 10px;
+    background-color: rgba(0, 191, 165, 0.08);
+    border-radius: 8px;
+    border: 1px solid var(--borde);
+}
+
+#contenedor-historial-mensual p {
     color: var(--texto-secundario);
     font-size: 0.9rem;
-    margin-bottom: 15px;
+    margin-bottom: 10px;
 }
 
-/* Reutilizamos estilos de lista de horas */
+/* Listas de registros */
 .lista-horas {
     list-style: none;
     margin-top: 10px;
@@ -202,15 +223,15 @@ body {
 
 .registro-hora .accion {
     color: var(--error);
-    cursor: pointer;
-    font-size: 0.9rem;
-    padding: 4px 8px;
     background: none;
     border: 1px solid var(--error);
+    padding: 4px 8px;
     border-radius: 4px;
+    font-size: 0.9rem;
+    cursor: pointer;
 }
 
-/* Lista de tareas */
+/* === SECCIÓN: PLAN DE ACCIÓN === */
 .tareas-lista {
     list-style: none;
     margin-top: 20px;
@@ -271,7 +292,7 @@ body {
     color: white;
 }
 
-/* Indicador de progreso */
+/* === SECCIÓN: PROGRESO === */
 .progreso-contenedor {
     display: flex;
     flex-direction: column;
@@ -310,9 +331,10 @@ body {
 .progreso p {
     text-align: center;
     color: var(--texto-secundario);
+    margin-top: 10px;
 }
 
-/* Footer */
+/* === FOOTER === */
 .footer {
     text-align: center;
     margin-top: 40px;
@@ -321,7 +343,12 @@ body {
     font-size: 0.9rem;
 }
 
-/* Responsive */
+/* === UTILIDADES === */
+.oculto {
+    display: none;
+}
+
+/* === RESPONSIVE === */
 @media (min-width: 768px) {
     .main-content {
         grid-template-columns: 1fr 1fr;
@@ -342,73 +369,4 @@ body {
         grid-column: auto;
         grid-row: span 2;
     }
-}
-
-/* Animaciones */
-@keyframes fadeIn {
-    from {
-        opacity: 0;
-    }
-    to {
-        opacity: 1;
-    }
-}
-
-.card {
-    animation: fadeIn 0.5s ease-in;
-}
-
-/* Enlace para mostrar historial mensual */
-.enlace-historial {
-    margin-top: 15px;
-}
-
-.btn-link {
-    background: none;
-    border: none;
-    color: var(--acento);
-    font-size: 1.1rem;
-    font-weight: bold;
-    cursor: pointer;
-    text-align: left;
-    padding: 5px 0;
-    transition: color 0.2s;
-}
-
-.btn-link:hover {
-    color: #00d8b8;
-    text-decoration: underline;
-}
-
-/* Historial mensual (oculto por defecto) */
-.historial-mensual {
-    margin-top: 10px;
-    padding: 10px;
-    background-color: rgba(0, 191, 165, 0.08);
-    border-radius: 8px;
-    border: 1px solid var(--borde);
-}
-
-.historial-mensual p {
-    color: var(--texto-secundario);
-    font-size: 0.9rem;
-    margin-bottom: 10px;
-}
-
-/* Clase para ocultar */
-.oculto {
-    display: none;
-}
-
-/* Icono de flecha dinámico */
-.btn-link::before {
-    display: inline-block;
-    content: "▶";
-    margin-right: 6px;
-    font-size: 0.9em;
-    transition: transform 0.2s;
-}
-
-.btn-link.expandido::before {
-    transform: rotate(90deg);
 }
