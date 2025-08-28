@@ -28,7 +28,7 @@ body {
 }
 
 .container {
-    max-width: 1200px;
+    max-width: 1400px;
     margin: 0 auto;
     padding: 20px;
 }
@@ -49,11 +49,33 @@ body {
     font-size: 1rem;
 }
 
-/* === GRID LAYOUT === */
+/* === GRID LAYOUT: Distribución equilibrada === */
 .main-content {
     display: grid;
     grid-template-columns: 1fr;
     gap: 20px;
+}
+
+/* Pantalla mediana: 2 columnas */
+@media (min-width: 768px) {
+    .main-content {
+        grid-template-columns: 1fr 1fr;
+        gap: 25px;
+    }
+}
+
+/* Pantalla grande: 3 columnas con proporción 2:1:1 */
+@media (min-width: 1024px) {
+    .main-content {
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: 25px;
+    }
+
+    /* Asegurar que el indicador de progreso ocupe su celda */
+    .card.progreso {
+        grid-column: auto;
+        grid-row: span 1;
+    }
 }
 
 /* === TARJETAS GENERALES === */
@@ -63,6 +85,8 @@ body {
     padding: 20px;
     box-shadow: 0 4px 10px var(--sombra);
     transition: transform 0.2s ease;
+    display: flex;
+    flex-direction: column;
 }
 
 .card:hover {
@@ -99,15 +123,23 @@ body {
     font-size: 0.9rem;
 }
 
+/* Limitar ancho de los inputs para evitar estiramiento */
 .form-group input,
 .form-group select {
     width: 100%;
+    max-width: 100%;
     padding: 10px;
     border-radius: 6px;
     border: 1px solid var(--borde);
     background-color: var(--fondo-oscuro);
     color: var(--texto-claro);
     font-size: 1rem;
+}
+
+/* Limitar el ancho máximo del formulario */
+.card.horas-trabajo form,
+.card.plan-accion form {
+    max-width: 100%;
 }
 
 /* Botones */
@@ -118,11 +150,12 @@ body {
     cursor: pointer;
     font-size: 1rem;
     transition: background-color 0.2s;
+    align-self: flex-start;
 }
 
 .btn-primary {
     background-color: var(--acento);
-    color: white;
+    color: #000000;
 }
 
 .btn-primary:hover {
@@ -152,7 +185,7 @@ body {
     padding-bottom: 5px;
 }
 
-/* Historial Mensual (colapsable) */
+/* Enlace colapsable (Historial Mensual) */
 .enlace-historial {
     margin-top: 15px;
 }
@@ -186,6 +219,7 @@ body {
     transform: rotate(90deg);
 }
 
+/* Historial mensual */
 #contenedor-historial-mensual {
     margin-top: 10px;
     padding: 10px;
@@ -200,13 +234,15 @@ body {
     margin-bottom: 10px;
 }
 
-/* Listas de registros */
-.lista-horas {
+/* Listas (horas y tareas) */
+.lista-horas,
+.tareas-lista {
     list-style: none;
     margin-top: 10px;
 }
 
-.registro-hora {
+.registro-hora,
+.tarea-item {
     background-color: var(--fondo-oscuro);
     padding: 10px;
     border-radius: 6px;
@@ -217,56 +253,23 @@ body {
     align-items: center;
 }
 
-.registro-hora .detalle {
+.registro-hora .detalle,
+.tarea-item .tarea-texto {
     flex-grow: 1;
+}
+
+.registro-hora .accion,
+.botones-tarea button {
+    font-size: 0.9rem;
+    padding: 4px 8px;
+    border: 1px solid var(--error);
+    border-radius: 4px;
+    cursor: pointer;
 }
 
 .registro-hora .accion {
     color: var(--error);
     background: none;
-    border: 1px solid var(--error);
-    padding: 4px 8px;
-    border-radius: 4px;
-    font-size: 0.9rem;
-    cursor: pointer;
-}
-
-/* === SECCIÓN: PLAN DE ACCIÓN === */
-.tareas-lista {
-    list-style: none;
-    margin-top: 20px;
-}
-
-.tarea-item {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 12px;
-    background-color: var(--fondo-oscuro);
-    border-radius: 8px;
-    margin-bottom: 10px;
-    border-left: 4px solid #aaa;
-}
-
-.tarea-item[data-prioridad="alta"] {
-    border-left-color: #cf3636;
-}
-
-.tarea-item[data-prioridad="media"] {
-    border-left-color: #ff9800;
-}
-
-.tarea-item[data-prioridad="baja"] {
-    border-left-color: #00bfa5;
-}
-
-.tarea-texto {
-    flex-grow: 1;
-}
-
-.tarea-completada {
-    text-decoration: line-through;
-    opacity: 0.6;
 }
 
 .botones-tarea {
@@ -274,22 +277,25 @@ body {
     gap: 8px;
 }
 
-.botones-tarea button {
-    padding: 6px 10px;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 0.8rem;
-}
-
 .btn-completar {
     background-color: var(--acento);
     color: white;
+    border: none;
+    padding: 6px 10px;
+    border-radius: 4px;
 }
 
 .btn-eliminar {
     background-color: var(--error);
     color: white;
+    border: none;
+    padding: 6px 10px;
+    border-radius: 4px;
+}
+
+.tarea-texto.tarea-completada {
+    text-decoration: line-through;
+    opacity: 0.6;
 }
 
 /* === SECCIÓN: PROGRESO === */
@@ -346,27 +352,4 @@ body {
 /* === UTILIDADES === */
 .oculto {
     display: none;
-}
-
-/* === RESPONSIVE === */
-@media (min-width: 768px) {
-    .main-content {
-        grid-template-columns: 1fr 1fr;
-        gap: 25px;
-    }
-
-    .card.progreso {
-        grid-column: span 2;
-    }
-}
-
-@media (min-width: 1024px) {
-    .main-content {
-        grid-template-columns: 2fr 1fr 1fr;
-    }
-
-    .card.progreso {
-        grid-column: auto;
-        grid-row: span 2;
-    }
 }
