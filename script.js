@@ -1,9 +1,9 @@
 // script.js
 // Aplicación para registrar horas de trabajo remoto, plan de acción y progreso
 
-// Variables globales
-let horasTrabajadas = [];
-let tareas = [];
+// Variables globales (serán reemplazadas por los datos de Firestore)
+window.horasTrabajadas = [];
+window.tareas = [];
 
 // Elementos del DOM (se inicializan en DOMContentLoaded)
 let formularioHoras;
@@ -25,7 +25,7 @@ function calcularHorasSemanales() {
 
     let totalMinutos = 0;
 
-    horasTrabajadas.forEach(registro => {
+    window.horasTrabajadas.forEach(registro => {
         const fechaRegistro = new Date(registro.fecha);
         fechaRegistro.setHours(0, 0, 0, 0);
 
@@ -46,19 +46,15 @@ function calcularHorasSemanales() {
     if (totalHorasElement) {
         totalHorasElement.textContent = totalHoras;
     }
-    console.log("✅ Total de horas actualizado:", totalHoras);
 }
 
 // Registrar hora
 function agregarHora(evento) {
     evento.preventDefault();
-    console.log("🔍 Formulario de horas enviado");
 
     const fecha = document.getElementById('fecha').value;
     const horaEntrada = document.getElementById('hora-entrada').value;
     const horaSalida = document.getElementById('hora-salida').value;
-
-    console.log("Datos del formulario:", { fecha, horaEntrada, horaSalida });
 
     if (!fecha || !horaEntrada || !horaSalida) {
         alert('Completa todos los campos.');
@@ -80,13 +76,10 @@ function agregarHora(evento) {
         horaSalida
     };
 
-    horasTrabajadas.push(nuevoRegistro);
-    console.log("✅ Registro agregado:", nuevoRegistro);
-
-    // Limpiar formulario
+    window.horasTrabajadas.push(nuevoRegistro);
     formularioHoras.reset();
 
-    // Actualizar interfaces
+    // Actualizar interfaz
     calcularHorasSemanales();
     renderizarHistorialHoras();
 
@@ -96,7 +89,9 @@ function agregarHora(evento) {
         renderizarHistorialMensual();
     }
 
-    // Notificación corregida
+    // Guardar en la nube
+    guardarDatos();
+
     alert('Hora registrada con éxito.');
 }
 
@@ -110,7 +105,7 @@ function agregarTarea(evento) {
         return;
     }
 
-    tareas.push({
+    window.tareas.push({
         id: Date.now(),
         texto,
         prioridad: document.getElementById('prioridad').value,
@@ -120,6 +115,10 @@ function agregarTarea(evento) {
     formularioPlan.reset();
     renderizarTareas();
     actualizarProgreso();
+
+    // Guardar en la nube
+    guardarDatos();
+
     alert('Tarea agregada.');
 }
 
@@ -128,7 +127,7 @@ function renderizarTareas() {
     if (!listaTareas) return;
     listaTareas.innerHTML = '';
 
-    tareas.forEach(t => {
+    window.tareas.forEach(t => {
         const li = document.createElement('li');
         li.className = 'tarea-item';
         li.setAttribute('data-prioridad', t.prioridad);
@@ -145,25 +144,27 @@ function renderizarTareas() {
 
 // Toggle tarea
 function toggleCompletada(id) {
-    const t = tareas.find(t => t.id === id);
+    const t = window.tareas.find(t => t.id === id);
     if (t) {
         t.completada = !t.completada;
         renderizarTareas();
         actualizarProgreso();
+        guardarDatos();
     }
 }
 
 // Eliminar tarea
 function eliminarTarea(id) {
-    tareas = tareas.filter(t => t.id !== id);
+    window.tareas = window.tareas.filter(t => t.id !== id);
     renderizarTareas();
     actualizarProgreso();
+    guardarDatos();
 }
 
 // Actualizar progreso
 function actualizarProgreso() {
-    const total = tareas.length;
-    const completadas = tareas.filter(t => t.completada).length;
+    const total = window.tareas.length;
+    const completadas = window.tareas.filter(t => t.completada).length;
     const porcentaje = total ? Math.round((completadas / total) * 100) : 0;
 
     porcentajeProgresoElement.textContent = `${porcentaje}%`;
@@ -180,14 +181,11 @@ function actualizarProgreso() {
 // Renderizar historial semanal
 function renderizarHistorialHoras() {
     const lista = document.getElementById('lista-horas');
-    if (!lista) {
-        console.error("❌ #lista-horas no encontrado");
-        return;
-    }
+    if (!lista) return;
 
     lista.innerHTML = '';
 
-    if (horasTrabajadas.length === 0) {
+    if (window.horasTrabajadas.length === 0) {
         lista.innerHTML = '<li class="registro-hora"><em>Sin registros aún.</em></li>';
         return;
     }
@@ -196,9 +194,9 @@ function renderizarHistorialHoras() {
     const diaSemana = hoy.getDay();
     const inicioSemana = new Date(hoy);
     inicioSemana.setHours(0, 0, 0, 0);
-    inicioSemana.setDate(hoy.getDate() - (diaSemana === 0 ? 6 : diaSemana - 1)); // Lunes
+    inicioSemana.setDate(hoy.getDate() - (diaSemana === 0 ? 6 : diaSemana - 1));
 
-    const registrosSemana = horasTrabajadas.filter(registro => {
+    const registrosSemana = window.horasTrabajadas.filter(registro => {
         const fecha = new Date(registro.fecha);
         return fecha >= inicioSemana && fecha <= hoy;
     });
@@ -238,14 +236,11 @@ function renderizarHistorialHoras() {
 // Función: renderizarHistorialMensual – Muestra todas las horas del mes actual
 function renderizarHistorialMensual() {
     const lista = document.getElementById('lista-historial-mensual');
-    if (!lista) {
-        console.error("❌ #lista-historial-mensual no encontrado");
-        return;
-    }
+    if (!lista) return;
 
     lista.innerHTML = '';
 
-    if (horasTrabajadas.length === 0) {
+    if (window.horasTrabajadas.length === 0) {
         lista.innerHTML = '<li class="registro-hora"><em>Sin registros aún.</em></li>';
         return;
     }
@@ -254,7 +249,7 @@ function renderizarHistorialMensual() {
     const mesActual = hoy.getMonth();
     const añoActual = hoy.getFullYear();
 
-    const registrosMes = horasTrabajadas.filter(registro => {
+    const registrosMes = window.horasTrabajadas.filter(registro => {
         if (!registro.fecha) return false;
         const fecha = new Date(registro.fecha);
         return !isNaN(fecha.getTime()) &&
@@ -306,11 +301,10 @@ function formatearFechaLegible(fechaStr) {
 
 // Eliminar registro de horas
 function eliminarRegistroHora(id) {
-    const antes = horasTrabajadas.length;
-    horasTrabajadas = horasTrabajadas.filter(h => h.id !== id);
+    const antes = window.horasTrabajadas.length;
+    window.horasTrabajadas = window.horasTrabajadas.filter(h => h.id !== id);
 
-    if (horasTrabajadas.length !== antes) {
-        console.log("✅ Registro eliminado (ID:", id, ")");
+    if (window.horasTrabajadas.length !== antes) {
         calcularHorasSemanales();
         renderizarHistorialHoras();
 
@@ -318,8 +312,8 @@ function eliminarRegistroHora(id) {
         if (contenedor && !contenedor.classList.contains('oculto')) {
             renderizarHistorialMensual();
         }
-    } else {
-        console.warn("⚠️ No se encontró el registro con ID:", id);
+
+        guardarDatos();
     }
 }
 
@@ -333,7 +327,7 @@ function toggleHistorialMensual() {
     if (contenedor.classList.contains('oculto')) {
         contenedor.classList.remove('oculto');
         boton?.classList.add('expandido');
-        renderizarHistorialMensual(); // Siempre renderiza al abrir
+        renderizarHistorialMensual();
     } else {
         contenedor.classList.add('oculto');
         boton?.classList.remove('expandido');
@@ -354,35 +348,19 @@ function inicializarApp() {
     totalTareasElement = document.getElementById('total-tareas');
     progresoFill = document.querySelector('.progreso-circular-fill');
 
-    // Cargar datos de localStorage
-    try {
-        if (localStorage.getItem('horasTrabajadas')) {
-            horasTrabajadas = JSON.parse(localStorage.getItem('horasTrabajadas'));
-            console.log("✅ Horas cargadas:", horasTrabajadas);
-        }
-        if (localStorage.getItem('tareas')) {
-            tareas = JSON.parse(localStorage.getItem('tareas'));
-            console.log("✅ Tareas cargadas:", tareas);
-        }
-    } catch (e) {
-        console.error("❌ Error al cargar localStorage:", e);
-        horasTrabajadas = [];
-        tareas = [];
-    }
-
-    // Renderizar todo
-    calcularHorasSemanales();
-    renderizarTareas();
-    actualizarProgreso();
-    renderizarHistorialHoras();
-
-    // No renderizamos mensual aquí, solo si se abre
-
     // Event listeners
     formularioHoras?.addEventListener('submit', agregarHora);
     formularioPlan?.addEventListener('submit', agregarTarea);
 
-    console.log("✅ App inicializada y lista");
+    // Escuchar cuando los datos de Firestore estén listos
+    document.addEventListener('datosCargados', () => {
+        calcularHorasSemanales();
+        renderizarTareas();
+        actualizarProgreso();
+        renderizarHistorialHoras();
+    });
+
+    console.log("✅ App lista. Esperando datos de la nube...");
 }
 
 // Iniciar cuando el DOM esté listo

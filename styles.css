@@ -64,14 +64,13 @@ body {
     }
 }
 
-/* Pantalla grande: 3 columnas con proporción 2:1:1 */
+/* Pantalla grande: 3 columnas iguales */
 @media (min-width: 1024px) {
     .main-content {
         grid-template-columns: 1fr 1fr 1fr;
         gap: 25px;
     }
 
-    /* Asegurar que el indicador de progreso ocupe su celda */
     .card.progreso {
         grid-column: auto;
         grid-row: span 1;
@@ -123,7 +122,6 @@ body {
     font-size: 0.9rem;
 }
 
-/* Limitar ancho de los inputs para evitar estiramiento */
 .form-group input,
 .form-group select {
     width: 100%;
@@ -132,11 +130,10 @@ body {
     border-radius: 6px;
     border: 1px solid var(--borde);
     background-color: var(--fondo-oscuro);
-    color: var(--texto-claro);
+    color: white;
     font-size: 1rem;
 }
 
-/* Limitar el ancho máximo del formulario */
 .card.horas-trabajo form,
 .card.plan-accion form {
     max-width: 100%;
@@ -155,7 +152,7 @@ body {
 
 .btn-primary {
     background-color: var(--acento);
-    color: #000000;
+    color: #000000; /* Texto negro para mejor contraste */
 }
 
 .btn-primary:hover {
@@ -176,7 +173,6 @@ body {
     color: var(--acento);
 }
 
-/* Historial Semanal */
 .historial-horas h3 {
     margin: 20px 0 10px 0;
     color: var(--acento);
@@ -219,7 +215,6 @@ body {
     transform: rotate(90deg);
 }
 
-/* Historial mensual */
 #contenedor-historial-mensual {
     margin-top: 10px;
     padding: 10px;
@@ -234,13 +229,15 @@ body {
     margin-bottom: 10px;
 }
 
-/* Listas (horas y tareas) */
+/* === SECCIÓN: PLAN DE ACCIÓN === */
+/* Listas generales */
 .lista-horas,
 .tareas-lista {
     list-style: none;
     margin-top: 10px;
 }
 
+/* Elementos de lista generales */
 .registro-hora,
 .tarea-item {
     background-color: var(--fondo-oscuro);
@@ -253,30 +250,52 @@ body {
     align-items: center;
 }
 
-.registro-hora .detalle,
-.tarea-item .tarea-texto {
+/* Estilos específicos para elementos de tarea */
+.tarea-item {
+    /* Borde izquierdo para indicar prioridad */
+    border-left: 4px solid #aaa; /* Color por defecto */
+}
+
+.tarea-item[data-prioridad="alta"] {
+    border-left-color: #cf3636; /* Rojo para alta prioridad */
+}
+
+.tarea-item[data-prioridad="media"] {
+    border-left-color: #ff9800; /* Naranja para prioridad media */
+}
+
+.tarea-item[data-prioridad="baja"] {
+    border-left-color: #00bfa5; /* Verde azulado para baja prioridad */
+}
+
+/* Texto de la tarea */
+.tarea-texto {
     flex-grow: 1;
+    /* Espacio para el texto */
 }
 
-.registro-hora .accion,
-.botones-tarea button {
-    font-size: 0.9rem;
-    padding: 4px 8px;
-    border: 1px solid var(--error);
-    border-radius: 4px;
-    cursor: pointer;
+/* Tarea completada */
+.tarea-texto.tarea-completada {
+    text-decoration: line-through;
+    opacity: 0.6;
 }
 
-.registro-hora .accion {
-    color: var(--error);
-    background: none;
-}
-
+/* Contenedor de botones */
 .botones-tarea {
     display: flex;
-    gap: 8px;
+    gap: 8px; /* Espacio entre botones */
 }
 
+/* Botones dentro de .botones-tarea */
+.botones-tarea button {
+    padding: 6px 10px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.8rem;
+}
+
+/* Botón Completar */
 .btn-completar {
     background-color: var(--acento);
     color: white;
@@ -285,6 +304,7 @@ body {
     border-radius: 4px;
 }
 
+/* Botón Eliminar */
 .btn-eliminar {
     background-color: var(--error);
     color: white;
@@ -293,10 +313,6 @@ body {
     border-radius: 4px;
 }
 
-.tarea-texto.tarea-completada {
-    text-decoration: line-through;
-    opacity: 0.6;
-}
 
 /* === SECCIÓN: PROGRESO === */
 .progreso-contenedor {

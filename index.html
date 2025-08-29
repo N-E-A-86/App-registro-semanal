@@ -47,24 +47,22 @@
                     </ul>
                 </div>
 
-                <!-- Enlace para mostrar/ocultar historial mensual -->
-<div class="enlace-historial">
-    <button type="button" class="btn-link" onclick="toggleHistorialMensual()">
-        ▶ Historial Mensual
-    </button>
-</div>
+                <!-- Enlace para mostrar historial mensual -->
+                <div class="enlace-historial">
+                    <button type="button" class="btn-link" onclick="toggleHistorialMensual()">
+                        ▶ Historial Mensual
+                    </button>
+                </div>
 
-<!-- Contenedor oculto del historial mensual -->
-<div id="contenedor-historial-mensual" class="historial-mensual oculto">
-    <p>Registros del mes actual</p>
-    <ul id="lista-historial-mensual" class="lista-horas">
-        <!-- Generado dinámicamente -->
-    </ul>
-</div>
-
-                
+                <!-- Contenedor oculto del historial mensual -->
+                <div id="contenedor-historial-mensual" class="historial-mensual oculto">
+                    <p>Registros del mes actual</p>
+                    <ul id="lista-historial-mensual" class="lista-horas">
+                        <!-- Generado dinámicamente -->
+                    </ul>
+                </div>
             </section>
-    
+
             <!-- Sección de Plan de Acción Semanal -->
             <section class="card plan-accion">
                 <h2>Plan de Acción Semanal</h2>
@@ -88,14 +86,6 @@
                     <!-- Generado dinámicamente -->
                 </ul>
             </section>
-                            <!-- Sección: Historial Mensual -->
-<!-- <section class="card historial-mensual">
-    <h2>Historial Mensual</h2>
-    <p>Registros de todo el mes actual</p>
-    <ul id="lista-historial-mensual" class="lista-horas"> -->
-        <!-- Generado dinámicamente -->
-    <!-- </ul>
-</section> -->
 
             <!-- Sección de Indicador de Progreso -->
             <section class="card progreso">
@@ -114,10 +104,84 @@
         </main>
 
         <footer class="footer">
-            <p>&copy; 2025 Registro de Trabajo Remoto. Todos los derechos reservados.</p>
+            <p>&copy; 2025 Registro de Trabajo Remoto. Arrua Nicolas Todos los derechos reservados.</p>
         </footer>
     </div>
 
+    <!-- Firebase SDK: Compatibility Mode (v9+) -->
+    <!-- Corregido: Eliminados los espacios extras al final de las URLs -->
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+
+    <script>
+        // Tu configuración de Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyAOT2ZR3L0LI8oVfQPnIKzgWhU4sjlXS1o",
+            authDomain: "mi-dashboard-trabajo.firebaseapp.com",
+            projectId: "mi-dashboard-trabajo",
+            storageBucket: "mi-dashboard-trabajo.firebasestorage.app",
+            messagingSenderId: "507126195570",
+            appId: "1:507126195570:web:674dacc7f66c45eb9b29eb"
+        };
+
+        // Inicializar Firebase
+        firebase.initializeApp(firebaseConfig);
+
+        // Obtener instancia de Firestore (en modo compatibilidad)
+        const db = firebase.firestore();
+
+        // ID único para compartir datos (puedes cambiarlo)
+        const userId = 'supervisor-acceso'; // Todos ven lo mismo
+
+        // Cargar datos desde Firestore
+        async function cargarDatos() {
+            try {
+                const doc = await db.collection('usuarios').doc(userId).get();
+                if (doc.exists) {
+                    const data = doc.data();
+                    window.horasTrabajadas = data.horasTrabajadas || [];
+                    window.tareas = data.tareas || [];
+                    console.log("✅ Datos cargados de la nube:", data);
+                } else {
+                    console.log("📭 No hay datos. Iniciando vacío.");
+                    window.horasTrabajadas = [];
+                    window.tareas = [];
+                }
+                // Notificar que los datos están listos
+                document.dispatchEvent(new Event('datosCargados'));
+            } catch (e) {
+                console.error("❌ Error al cargar de Firestore:", e);
+                window.horasTrabajadas = [];
+                window.tareas = [];
+                document.dispatchEvent(new Event('datosCargados'));
+            }
+        }
+
+        // Guardar datos en Firestore
+        async function guardarDatos() {
+            if (!window.horasTrabajadas || !window.tareas) return;
+            try {
+                await db.collection('usuarios').doc(userId).set({
+                    horasTrabajadas: window.horasTrabajadas,
+                    tareas: window.tareas,
+                    updatedAt: new Date()
+                });
+                console.log("✅ Datos guardados en la nube");
+            } catch (e) {
+                console.error("❌ Error al guardar en Firestore:", e);
+            }
+        }
+
+        // Cargar al iniciar
+        cargarDatos();
+    </script>
+
+    <!-- Tu script principal -->
     <script src="script.js"></script>
+
+    <script>
+        // Asegurar que guardarDatos() esté disponible globalmente
+        window.guardarDatos = guardarDatos;
+    </script>
 </body>
 </html>
