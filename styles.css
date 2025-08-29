@@ -306,7 +306,7 @@ body {
 
 /* Botón Eliminar */
 .btn-eliminar {
-    background-color: var(--error);
+    background-color: rgb(243, 17, 17) (--error);
     color: white;
     border: none;
     padding: 6px 10px;
