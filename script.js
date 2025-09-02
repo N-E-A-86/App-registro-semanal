@@ -18,8 +18,31 @@ let progresoFill;
 // Variable para el historial mensual
 let historialMesSeleccionado = null; // null para mes actual
 
+// --- Funciones auxiliares para fechas ---
+// Función para normalizar una fecha a las 00:00:00.000
+function normalizarFecha(fecha) {
+    const f = new Date(fecha);
+    f.setHours(0, 0, 0, 0);
+    return f;
+}
+
+// Función para obtener el inicio de la semana (lunes) de una fecha dada
+function getInicioSemana(fecha) {
+    const f = normalizarFecha(fecha);
+    const dia = f.getDay();
+    const diff = f.getDate() - dia + (dia === 0 ? -6 : 1); // Ajustar para que la semana empiece el lunes
+    return new Date(f.setDate(diff));
+}
+
+// Función para obtener el fin de la semana (domingo) de una fecha dada
+function getFinSemana(fecha) {
+    const inicio = getInicioSemana(fecha);
+    const fin = new Date(inicio);
+    fin.setDate(inicio.getDate() + 6);
+    return fin;
+}
+
 // --- Funciones para el selector de mes del historial ---
-// mesOffset: 0 para mes actual, -1 para mes anterior, -2 para dos meses antes, etc.
 function setHistorialMes(mesOffset) {
     const fechaRef = new Date();
     fechaRef.setMonth(fechaRef.getMonth() + mesOffset);
@@ -27,9 +50,8 @@ function setHistorialMes(mesOffset) {
         mes: fechaRef.getMonth(),
         año: fechaRef.getFullYear()
     };
-    renderizarHistorialMensual(); // Re-renderizar con el nuevo mes
+    renderizarHistorialMensual();
 
-    // Actualizar texto del botón/selector
     const opciones = { year: 'numeric', month: 'long' };
     const nombreMes = fechaRef.toLocaleDateString('es-ES', opciones);
     const botonHistorial = document.querySelector('.btn-link');
@@ -41,31 +63,51 @@ function setHistorialMes(mesOffset) {
 // Función para calcular horas semanales
 function calcularHorasSemanales() {
     const hoy = new Date();
-    const diaSemana = hoy.getDay();
-    const inicioSemana = new Date(hoy);
-    inicioSemana.setHours(0, 0, 0, 0);
-    inicioSemana.setDate(hoy.getDate() - (diaSemana === 0 ? 6 : diaSemana - 1)); // Lunes
+    const inicioSemana = getInicioSemana(hoy);
+    const finSemana = getFinSemana(hoy);
+
+    console.log("Calculando horas semanales:");
+    console.log("Hoy:", hoy.toISOString().split('T')[0]);
+    console.log("Inicio de semana (Lunes):", inicioSemana.toISOString().split('T')[0]);
+    console.log("Fin de semana (Domingo):", finSemana.toISOString().split('T')[0]);
 
     let totalMinutos = 0;
 
     window.horasTrabajadas.forEach(registro => {
-        const fechaRegistro = new Date(registro.fecha);
-        fechaRegistro.setHours(0, 0, 0, 0);
+        const fechaRegistroStr = registro.fecha; // Formato YYYY-MM-DD
+        if (!fechaRegistroStr) {
+            console.warn("Registro sin fecha:", registro);
+            return;
+        }
 
-        if (fechaRegistro >= inicioSemana && fechaRegistro <= hoy) {
-            const [hEntrada, mEntrada] = registro.horaEntrada.split(':').map(Number);
-            const [hSalida, mSalida] = registro.horaSalida.split(':').map(Number);
+        // Crear objeto Date desde la cadena YYYY-MM-DD
+        // Esto evita problemas de zona horaria al usar la fecha local
+        const partes = fechaRegistroStr.split('-');
+        const fechaRegistro = new Date(partes[0], partes[1] - 1, partes[2]); // Año, Mes (0-11), Día
+        fechaRegistro.setHours(0, 0, 0, 0); // Normalizar
 
-            if (isNaN(hEntrada) || isNaN(mEntrada) || isNaN(hSalida) || isNaN(mSalida)) return;
+        console.log(`Revisando registro ${fechaRegistroStr} (${fechaRegistro.toISOString().split('T')[0]})`);
+        console.log(`¿Está entre ${inicioSemana.toISOString().split('T')[0]} y ${finSemana.toISOString().split('T')[0]}?`, fechaRegistro >= inicioSemana && fechaRegistro <= finSemana);
+
+        if (fechaRegistro >= inicioSemana && fechaRegistro <= finSemana) {
+            const [hEntrada, mEntrada] = (registro.horaEntrada || '').split(':').map(Number);
+            const [hSalida, mSalida] = (registro.horaSalida || '').split(':').map(Number);
+
+            if (isNaN(hEntrada) || isNaN(mEntrada) || isNaN(hSalida) || isNaN(mSalida)) {
+                console.warn("Hora inválida en registro:", registro);
+                return;
+            }
 
             const minutos = (hSalida * 60 + mSalida) - (hEntrada * 60 + mEntrada);
             if (minutos > 0) {
                 totalMinutos += minutos;
+                console.log(`  -> Sumado: ${minutos} minutos`);
             }
         }
     });
 
     const totalHoras = (totalMinutos / 60).toFixed(2);
+    console.log("Total horas calculado:", totalHoras);
     if (totalHorasElement) {
         totalHorasElement.textContent = totalHoras;
     }
@@ -100,21 +142,19 @@ function agregarHora(evento) {
     };
 
     window.horasTrabajadas.push(nuevoRegistro);
+    console.log("Registro agregado:", nuevoRegistro);
     formularioHoras.reset();
 
     // Actualizar interfaz
     calcularHorasSemanales();
     renderizarHistorialHoras();
 
-    // Si el historial mensual está abierto, actualízalo
     const contenedor = document.getElementById('contenedor-historial-mensual');
     if (contenedor && !contenedor.classList.contains('oculto')) {
         renderizarHistorialMensual();
     }
 
-    // Guardar en la nube
     guardarDatos();
-
     alert('Hora registrada con éxito.');
 }
 
@@ -138,10 +178,7 @@ function agregarTarea(evento) {
     formularioPlan.reset();
     renderizarTareas();
     actualizarProgreso();
-
-    // Guardar en la nube
     guardarDatos();
-
     alert('Tarea agregada.');
 }
 
@@ -197,7 +234,6 @@ function actualizarProgreso() {
     const circunferencia = 2 * Math.PI * 60;
     const offset = circunferencia - (porcentaje / 100) * circunferencia;
     progresoFill.style.strokeDashoffset = offset;
-
     progresoFill.style.stroke = porcentaje < 50 ? '#cf3636' : porcentaje < 80 ? '#ff9800' : '#00bfa5';
 }
 
@@ -214,14 +250,24 @@ function renderizarHistorialHoras() {
     }
 
     const hoy = new Date();
-    const diaSemana = hoy.getDay();
-    const inicioSemana = new Date(hoy);
-    inicioSemana.setHours(0, 0, 0, 0);
-    inicioSemana.setDate(hoy.getDate() - (diaSemana === 0 ? 6 : diaSemana - 1));
+    const inicioSemana = getInicioSemana(hoy);
+    const finSemana = getFinSemana(hoy);
+
+    console.log("Renderizando historial semanal:");
+    console.log("Inicio de semana (Lunes):", inicioSemana.toISOString().split('T')[0]);
+    console.log("Fin de semana (Domingo):", finSemana.toISOString().split('T')[0]);
 
     const registrosSemana = window.horasTrabajadas.filter(registro => {
-        const fecha = new Date(registro.fecha);
-        return fecha >= inicioSemana && fecha <= hoy;
+        const fechaRegistroStr = registro.fecha;
+        if (!fechaRegistroStr) return false;
+
+        const partes = fechaRegistroStr.split('-');
+        const fechaRegistro = new Date(partes[0], partes[1] - 1, partes[2]);
+        fechaRegistro.setHours(0, 0, 0, 0); // Normalizar
+
+        const pertenece = fechaRegistro >= inicioSemana && fechaRegistro <= finSemana;
+        console.log(`Registro ${fechaRegistroStr} pertenece a la semana: ${pertenece}`);
+        return pertenece;
     });
 
     if (registrosSemana.length === 0) {
@@ -256,7 +302,7 @@ function renderizarHistorialHoras() {
     });
 }
 
-// Función: renderizarHistorialMensual – Muestra horas del mes actual o del mes seleccionado
+// Función: renderizarHistorialMensual
 function renderizarHistorialMensual() {
     const lista = document.getElementById('lista-historial-mensual');
     if (!lista) return;
@@ -270,24 +316,22 @@ function renderizarHistorialMensual() {
 
     let registrosMes;
     if (historialMesSeleccionado) {
-        // Filtrar por el mes seleccionado
         registrosMes = window.horasTrabajadas.filter(registro => {
             if (!registro.fecha) return false;
-            const fecha = new Date(registro.fecha);
-            return !isNaN(fecha.getTime()) &&
-                   fecha.getMonth() === historialMesSeleccionado.mes &&
+            const partes = registro.fecha.split('-');
+            const fecha = new Date(partes[0], partes[1] - 1, partes[2]);
+            return fecha.getMonth() === historialMesSeleccionado.mes &&
                    fecha.getFullYear() === historialMesSeleccionado.año;
         });
     } else {
-        // Comportamiento original: mes actual
         const hoy = new Date();
         const mesActual = hoy.getMonth();
         const añoActual = hoy.getFullYear();
         registrosMes = window.horasTrabajadas.filter(registro => {
             if (!registro.fecha) return false;
-            const fecha = new Date(registro.fecha);
-            return !isNaN(fecha.getTime()) &&
-                   fecha.getMonth() === mesActual &&
+            const partes = registro.fecha.split('-');
+            const fecha = new Date(partes[0], partes[1] - 1, partes[2]);
+            return fecha.getMonth() === mesActual &&
                    fecha.getFullYear() === añoActual;
         });
     }
@@ -326,16 +370,19 @@ function renderizarHistorialMensual() {
     });
 }
 
-
-// Formatear fecha legible: "22 abr 2025"
 function formatearFechaLegible(fechaStr) {
+    if (!fechaStr) return 'Fecha inválida';
+    const partes = fechaStr.split('-');
+    if (partes.length !== 3) return 'Fecha inválida';
+    
     const opciones = { day: '2-digit', month: 'short', year: 'numeric' };
-    const fecha = new Date(fechaStr);
+    // Crear fecha usando constructor seguro para evitar zona horaria
+    const fecha = new Date(partes[0], partes[1] - 1, partes[2]);
     if (isNaN(fecha.getTime())) return 'Fecha inválida';
+    
     return new Intl.DateTimeFormat('es-ES', opciones).format(fecha).replace('.', '');
 }
 
-// Eliminar registro de horas
 function eliminarRegistroHora(id) {
     const antes = window.horasTrabajadas.length;
     window.horasTrabajadas = window.horasTrabajadas.filter(h => h.id !== id);
@@ -348,12 +395,10 @@ function eliminarRegistroHora(id) {
         if (contenedor && !contenedor.classList.contains('oculto')) {
             renderizarHistorialMensual();
         }
-
         guardarDatos();
     }
 }
 
-// Mostrar/ocultar historial mensual
 function toggleHistorialMensual() {
     const contenedor = document.getElementById('contenedor-historial-mensual');
     const boton = document.querySelector('.btn-link');
@@ -363,23 +408,20 @@ function toggleHistorialMensual() {
     if (contenedor.classList.contains('oculto')) {
         contenedor.classList.remove('oculto');
         boton?.classList.add('expandido');
-        // Si no se ha seleccionado un mes, mostrar el mes actual por defecto
         if (!historialMesSeleccionado) {
-             // Opcional: puedes llamar a setHistorialMes(0) aquí para asegurar que se muestra el mes actual
-             // setHistorialMes(0); 
+             setHistorialMes(0); // Mostrar mes actual por defecto y renderizar
+        } else {
+            renderizarHistorialMensual();
         }
-        renderizarHistorialMensual();
     } else {
         contenedor.classList.add('oculto');
         boton?.classList.remove('expandido');
     }
 }
 
-// Inicializar app
 function inicializarApp() {
     console.log("✅ DOM cargado. Inicializando app...");
 
-    // Seleccionar elementos
     formularioHoras = document.getElementById('formulario-horas');
     formularioPlan = document.getElementById('formulario-plan');
     listaTareas = document.getElementById('lista-tareas');
@@ -389,12 +431,11 @@ function inicializarApp() {
     totalTareasElement = document.getElementById('total-tareas');
     progresoFill = document.querySelector('.progreso-circular-fill');
 
-    // Event listeners
     formularioHoras?.addEventListener('submit', agregarHora);
     formularioPlan?.addEventListener('submit', agregarTarea);
 
-    // Escuchar cuando los datos de Firestore estén listos
     document.addEventListener('datosCargados', () => {
+        console.log("Datos cargados, renderizando...");
         calcularHorasSemanales();
         renderizarTareas();
         actualizarProgreso();
@@ -404,39 +445,4 @@ function inicializarApp() {
     console.log("✅ App lista. Esperando datos de la nube...");
 }
 
-// Iniciar cuando el DOM esté listo
 document.addEventListener('DOMContentLoaded', inicializarApp);
-
-/*
-Para que las nuevas funciones de selección de mes funcionen, 
-debes actualizar tu index.html. Agrega los siguientes botones 
-justo antes del div con id="contenedor-historial-mensual":
-
-<!-- Selector de mes para el historial -->
-<div class="selector-mes-historial" style="margin-bottom: 10px; display: none;" id="selector-mes-historial">
-  <button onclick="setHistorialMes(0)">Este mes</button>
-  <button onclick="setHistorialMes(-1)">Mes anterior</button>
-  <button onclick="setHistorialMes(-2)">Hace 2 meses</button>
-</div>
-
-Y modifica el botón de "Historial Mensual" para que también muestre 
-el mes seleccionado. Puedes hacerlo actualizando su texto desde JS 
-como se hace en setHistorialMes, o simplemente usar un texto genérico 
-y dejar que JS lo cambie.
-
-Ejemplo de botón actualizado (en tu HTML actual):
-<button type="button" class="btn-link" onclick="toggleSelectorMes()">
-    ▶ Historial Mensual
-</button>
-
-Y agrega esta función en tu script o en un <script> en index.html:
-function toggleSelectorMes() {
-    const selector = document.getElementById('selector-mes-historial');
-    if (selector) {
-        selector.style.display = selector.style.display === 'none' ? 'block' : 'none';
-    }
-    // También puedes llamar a toggleHistorialMensual() aquí si quieres 
-    // que se abra el historial al mismo tiempo.
-    // toggleHistorialMensual();
-}
-*/
