@@ -2,6 +2,7 @@
 // Aplicación para registrar horas de trabajo remoto, plan de acción y progreso
 
 // Variables globales (serán reemplazadas por los datos de Firestore)
+// Usamos `window.` para asegurar que sean globales y accesibles desde el HTML/otro JS
 window.horasTrabajadas = [];
 window.tareas = [];
 
@@ -19,16 +20,9 @@ let progresoFill;
 let historialMesSeleccionado = null; // null para mes actual
 
 // --- Funciones auxiliares para fechas ---
-// Función para normalizar una fecha a las 00:00:00.000
-function normalizarFecha(fecha) {
-    const f = new Date(fecha);
-    f.setHours(0, 0, 0, 0);
-    return f;
-}
-
 // Función para obtener el inicio de la semana (lunes) de una fecha dada
 function getInicioSemana(fecha) {
-    const f = normalizarFecha(fecha);
+    const f = new Date(fecha);
     const dia = f.getDay();
     const diff = f.getDate() - dia + (dia === 0 ? -6 : 1); // Ajustar para que la semana empiece el lunes
     return new Date(f.setDate(diff));
@@ -39,6 +33,7 @@ function getFinSemana(fecha) {
     const inicio = getInicioSemana(fecha);
     const fin = new Date(inicio);
     fin.setDate(inicio.getDate() + 6);
+    fin.setHours(23, 59, 59, 999); // Fin del día
     return fin;
 }
 
@@ -60,57 +55,43 @@ function setHistorialMes(mesOffset) {
     }
 }
 
-// Función para calcular horas semanales
+// Función para calcular horas semanales (lógica corregida del código original)
 function calcularHorasSemanales() {
     const hoy = new Date();
     const inicioSemana = getInicioSemana(hoy);
     const finSemana = getFinSemana(hoy);
 
-    console.log("Calculando horas semanales:");
-    console.log("Hoy:", hoy.toISOString().split('T')[0]);
-    console.log("Inicio de semana (Lunes):", inicioSemana.toISOString().split('T')[0]);
-    console.log("Fin de semana (Domingo):", finSemana.toISOString().split('T')[0]);
-
     let totalMinutos = 0;
 
     window.horasTrabajadas.forEach(registro => {
-        const fechaRegistroStr = registro.fecha; // Formato YYYY-MM-DD
-        if (!fechaRegistroStr) {
-            console.warn("Registro sin fecha:", registro);
-            return;
-        }
+        // Creamos un objeto Date a partir de la cadena YYYY-MM-DD
+        // Esto es más seguro que `new Date(registro.fecha)` solo.
+        const partesFecha = registro.fecha.split('-');
+        const fechaRegistro = new Date(partesFecha[0], partesFecha[1] - 1, partesFecha[2]);
+        fechaRegistro.setHours(0, 0, 0, 0); // Normalizamos a medianoche
 
-        // Crear objeto Date desde la cadena YYYY-MM-DD
-        // Esto evita problemas de zona horaria al usar la fecha local
-        const partes = fechaRegistroStr.split('-');
-        const fechaRegistro = new Date(partes[0], partes[1] - 1, partes[2]); // Año, Mes (0-11), Día
-        fechaRegistro.setHours(0, 0, 0, 0); // Normalizar
-
-        console.log(`Revisando registro ${fechaRegistroStr} (${fechaRegistro.toISOString().split('T')[0]})`);
-        console.log(`¿Está entre ${inicioSemana.toISOString().split('T')[0]} y ${finSemana.toISOString().split('T')[0]}?`, fechaRegistro >= inicioSemana && fechaRegistro <= finSemana);
-
+        // Comparamos con los límites de la semana
         if (fechaRegistro >= inicioSemana && fechaRegistro <= finSemana) {
             const [hEntrada, mEntrada] = (registro.horaEntrada || '').split(':').map(Number);
             const [hSalida, mSalida] = (registro.horaSalida || '').split(':').map(Number);
 
             if (isNaN(hEntrada) || isNaN(mEntrada) || isNaN(hSalida) || isNaN(mSalida)) {
-                console.warn("Hora inválida en registro:", registro);
+                 console.warn("Hora inválida en registro:", registro);
                 return;
             }
 
             const minutos = (hSalida * 60 + mSalida) - (hEntrada * 60 + mEntrada);
             if (minutos > 0) {
                 totalMinutos += minutos;
-                console.log(`  -> Sumado: ${minutos} minutos`);
             }
         }
     });
 
     const totalHoras = (totalMinutos / 60).toFixed(2);
-    console.log("Total horas calculado:", totalHoras);
     if (totalHorasElement) {
         totalHorasElement.textContent = totalHoras;
     }
+    console.log("✅ Total de horas actualizado:", totalHoras);
 }
 
 // Registrar hora
@@ -136,25 +117,29 @@ function agregarHora(evento) {
 
     const nuevoRegistro = {
         id: Date.now(),
-        fecha,
+        fecha, // Esta es una cadena YYYY-MM-DD
         horaEntrada,
         horaSalida
     };
 
     window.horasTrabajadas.push(nuevoRegistro);
-    console.log("Registro agregado:", nuevoRegistro);
     formularioHoras.reset();
 
     // Actualizar interfaz
     calcularHorasSemanales();
     renderizarHistorialHoras();
 
+    // Si el historial mensual está abierto, actualízalo
     const contenedor = document.getElementById('contenedor-historial-mensual');
     if (contenedor && !contenedor.classList.contains('oculto')) {
         renderizarHistorialMensual();
     }
 
-    guardarDatos();
+    // Guardar en la nube
+    if (typeof window.guardarDatos === 'function') {
+         window.guardarDatos();
+    }
+
     alert('Hora registrada con éxito.');
 }
 
@@ -178,7 +163,11 @@ function agregarTarea(evento) {
     formularioPlan.reset();
     renderizarTareas();
     actualizarProgreso();
-    guardarDatos();
+    
+    if (typeof window.guardarDatos === 'function') {
+         window.guardarDatos();
+    }
+    
     alert('Tarea agregada.');
 }
 
@@ -209,7 +198,9 @@ function toggleCompletada(id) {
         t.completada = !t.completada;
         renderizarTareas();
         actualizarProgreso();
-        guardarDatos();
+        if (typeof window.guardarDatos === 'function') {
+             window.guardarDatos();
+        }
     }
 }
 
@@ -218,7 +209,9 @@ function eliminarTarea(id) {
     window.tareas = window.tareas.filter(t => t.id !== id);
     renderizarTareas();
     actualizarProgreso();
-    guardarDatos();
+    if (typeof window.guardarDatos === 'function') {
+         window.guardarDatos();
+    }
 }
 
 // Actualizar progreso
@@ -237,10 +230,13 @@ function actualizarProgreso() {
     progresoFill.style.stroke = porcentaje < 50 ? '#cf3636' : porcentaje < 80 ? '#ff9800' : '#00bfa5';
 }
 
-// Renderizar historial semanal
+// Renderizar historial semanal (código original, ligeramente mejorado)
 function renderizarHistorialHoras() {
     const lista = document.getElementById('lista-horas');
-    if (!lista) return;
+    if (!lista) {
+        console.error("❌ #lista-horas no encontrado");
+        return;
+    }
 
     lista.innerHTML = '';
 
@@ -253,21 +249,12 @@ function renderizarHistorialHoras() {
     const inicioSemana = getInicioSemana(hoy);
     const finSemana = getFinSemana(hoy);
 
-    console.log("Renderizando historial semanal:");
-    console.log("Inicio de semana (Lunes):", inicioSemana.toISOString().split('T')[0]);
-    console.log("Fin de semana (Domingo):", finSemana.toISOString().split('T')[0]);
-
+    // Filtrar registros de esta semana usando la nueva lógica de fechas
     const registrosSemana = window.horasTrabajadas.filter(registro => {
-        const fechaRegistroStr = registro.fecha;
-        if (!fechaRegistroStr) return false;
-
-        const partes = fechaRegistroStr.split('-');
-        const fechaRegistro = new Date(partes[0], partes[1] - 1, partes[2]);
-        fechaRegistro.setHours(0, 0, 0, 0); // Normalizar
-
-        const pertenece = fechaRegistro >= inicioSemana && fechaRegistro <= finSemana;
-        console.log(`Registro ${fechaRegistroStr} pertenece a la semana: ${pertenece}`);
-        return pertenece;
+        const partesFecha = registro.fecha.split('-');
+        const fechaRegistro = new Date(partesFecha[0], partesFecha[1] - 1, partesFecha[2]);
+        fechaRegistro.setHours(0, 0, 0, 0); // Normalizamos
+        return fechaRegistro >= inicioSemana && fechaRegistro <= finSemana;
     });
 
     if (registrosSemana.length === 0) {
@@ -275,6 +262,7 @@ function renderizarHistorialHoras() {
         return;
     }
 
+    // Ordenar por fecha (más reciente primero)
     registrosSemana.sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
 
     registrosSemana.forEach(registro => {
@@ -286,7 +274,6 @@ function renderizarHistorialHoras() {
         const horas = Math.floor(minutos / 60);
         const restoMinutos = minutos % 60;
         const duracion = `${horas}h ${restoMinutos}m`;
-        const fechaLegible = formatearFechaLegible(registro.fecha);
 
         const li = document.createElement('li');
         li.className = 'registro-hora';
@@ -294,18 +281,23 @@ function renderizarHistorialHoras() {
             <div class="detalle">
                 <strong>${registro.horaEntrada}</strong> - <strong>${registro.horaSalida}</strong>
                 <br>
-                <small>${duracion} | ${fechaLegible}</small>
+                <small>${duracion} | ${registro.fecha}</small>
             </div>
             <button class="accion" onclick="eliminarRegistroHora(${registro.id})">Eliminar</button>
         `;
         lista.appendChild(li);
     });
+
+    console.log("✅ Historial semanal renderizado:", registrosSemana);
 }
 
-// Función: renderizarHistorialMensual
+// Función: renderizarHistorialMensual (código original, ligeramente mejorado)
 function renderizarHistorialMensual() {
     const lista = document.getElementById('lista-historial-mensual');
-    if (!lista) return;
+    if (!lista) {
+        console.error("❌ #lista-historial-mensual no encontrado");
+        return;
+    }
 
     lista.innerHTML = '';
 
@@ -316,23 +308,23 @@ function renderizarHistorialMensual() {
 
     let registrosMes;
     if (historialMesSeleccionado) {
+        // Filtrar por el mes seleccionado
         registrosMes = window.horasTrabajadas.filter(registro => {
-            if (!registro.fecha) return false;
-            const partes = registro.fecha.split('-');
-            const fecha = new Date(partes[0], partes[1] - 1, partes[2]);
-            return fecha.getMonth() === historialMesSeleccionado.mes &&
-                   fecha.getFullYear() === historialMesSeleccionado.año;
+            const partesFecha = registro.fecha.split('-');
+            const fechaRegistro = new Date(partesFecha[0], partesFecha[1] - 1, partesFecha[2]);
+            return fechaRegistro.getMonth() === historialMesSeleccionado.mes &&
+                   fechaRegistro.getFullYear() === historialMesSeleccionado.año;
         });
     } else {
+        // Comportamiento original: mes actual
         const hoy = new Date();
         const mesActual = hoy.getMonth();
         const añoActual = hoy.getFullYear();
         registrosMes = window.horasTrabajadas.filter(registro => {
-            if (!registro.fecha) return false;
-            const partes = registro.fecha.split('-');
-            const fecha = new Date(partes[0], partes[1] - 1, partes[2]);
-            return fecha.getMonth() === mesActual &&
-                   fecha.getFullYear() === añoActual;
+            const partesFecha = registro.fecha.split('-');
+            const fechaRegistro = new Date(partesFecha[0], partesFecha[1] - 1, partesFecha[2]);
+            return fechaRegistro.getMonth() === mesActual &&
+                   fechaRegistro.getFullYear() === añoActual;
         });
     }
 
@@ -341,13 +333,12 @@ function renderizarHistorialMensual() {
         return;
     }
 
+    // Ordenar de más reciente a más antiguo
     registrosMes.sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
 
     registrosMes.forEach(registro => {
         const entrada = new Date(`2023-01-01 ${registro.horaEntrada}`);
         const salida = new Date(`2023-01-01 ${registro.horaSalida}`);
-        if (isNaN(entrada.getTime()) || isNaN(salida.getTime())) return;
-
         const minutos = Math.floor((salida - entrada) / (1000 * 60));
         if (minutos <= 0) return;
 
@@ -368,37 +359,39 @@ function renderizarHistorialMensual() {
         `;
         lista.appendChild(li);
     });
+
+    console.log("✅ Historial mensual renderizado:", registrosMes);
 }
 
+// Función auxiliar para formatear fechas legibles (reutilizable)
 function formatearFechaLegible(fechaStr) {
-    if (!fechaStr) return 'Fecha inválida';
-    const partes = fechaStr.split('-');
-    if (partes.length !== 3) return 'Fecha inválida';
-    
     const opciones = { day: '2-digit', month: 'short', year: 'numeric' };
-    // Crear fecha usando constructor seguro para evitar zona horaria
-    const fecha = new Date(partes[0], partes[1] - 1, partes[2]);
+    // Creamos la fecha de forma segura
+    const partesFecha = fechaStr.split('-');
+    const fecha = new Date(partesFecha[0], partesFecha[1] - 1, partesFecha[2]);
     if (isNaN(fecha.getTime())) return 'Fecha inválida';
-    
     return new Intl.DateTimeFormat('es-ES', opciones).format(fecha).replace('.', '');
 }
 
+// Eliminar hora
 function eliminarRegistroHora(id) {
-    const antes = window.horasTrabajadas.length;
-    window.horasTrabajadas = window.horasTrabajadas.filter(h => h.id !== id);
-
-    if (window.horasTrabajadas.length !== antes) {
+    if (confirm('¿Eliminar este registro?')) {
+        window.horasTrabajadas = window.horasTrabajadas.filter(h => h.id !== id);
         calcularHorasSemanales();
         renderizarHistorialHoras();
-
+        
         const contenedor = document.getElementById('contenedor-historial-mensual');
         if (contenedor && !contenedor.classList.contains('oculto')) {
             renderizarHistorialMensual();
         }
-        guardarDatos();
+        
+        if (typeof window.guardarDatos === 'function') {
+             window.guardarDatos();
+        }
     }
 }
 
+// Función para mostrar/ocultar el historial mensual (código original mejorado)
 function toggleHistorialMensual() {
     const contenedor = document.getElementById('contenedor-historial-mensual');
     const boton = document.querySelector('.btn-link');
@@ -406,22 +399,27 @@ function toggleHistorialMensual() {
     if (!contenedor) return;
 
     if (contenedor.classList.contains('oculto')) {
+        // Mostrar
         contenedor.classList.remove('oculto');
-        boton?.classList.add('expandido');
+        boton.classList.add('expandido');
+        // Si no se ha seleccionado un mes, mostrar el mes actual por defecto
         if (!historialMesSeleccionado) {
-             setHistorialMes(0); // Mostrar mes actual por defecto y renderizar
+             setHistorialMes(0); // Esto también renderiza
         } else {
             renderizarHistorialMensual();
         }
     } else {
+        // Ocultar
         contenedor.classList.add('oculto');
-        boton?.classList.remove('expandido');
+        boton.classList.remove('expandido');
     }
 }
 
+// Inicializar app
 function inicializarApp() {
     console.log("✅ DOM cargado. Inicializando app...");
 
+    // Seleccionar elementos
     formularioHoras = document.getElementById('formulario-horas');
     formularioPlan = document.getElementById('formulario-plan');
     listaTareas = document.getElementById('lista-tareas');
@@ -431,11 +429,13 @@ function inicializarApp() {
     totalTareasElement = document.getElementById('total-tareas');
     progresoFill = document.querySelector('.progreso-circular-fill');
 
+    // Event listeners
     formularioHoras?.addEventListener('submit', agregarHora);
     formularioPlan?.addEventListener('submit', agregarTarea);
 
+    // Escuchar cuando los datos de Firestore estén listos
     document.addEventListener('datosCargados', () => {
-        console.log("Datos cargados, renderizando...");
+        console.log("Datos cargados desde Firestore, renderizando...");
         calcularHorasSemanales();
         renderizarTareas();
         actualizarProgreso();
@@ -445,4 +445,5 @@ function inicializarApp() {
     console.log("✅ App lista. Esperando datos de la nube...");
 }
 
+// Iniciar cuando el DOM esté listo
 document.addEventListener('DOMContentLoaded', inicializarApp);
