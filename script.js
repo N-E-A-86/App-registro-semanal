@@ -15,6 +15,29 @@ let tareasCompletadasElement;
 let totalTareasElement;
 let progresoFill;
 
+// Variable para el historial mensual
+let historialMesSeleccionado = null; // null para mes actual
+
+// --- Funciones para el selector de mes del historial ---
+// mesOffset: 0 para mes actual, -1 para mes anterior, -2 para dos meses antes, etc.
+function setHistorialMes(mesOffset) {
+    const fechaRef = new Date();
+    fechaRef.setMonth(fechaRef.getMonth() + mesOffset);
+    historialMesSeleccionado = {
+        mes: fechaRef.getMonth(),
+        año: fechaRef.getFullYear()
+    };
+    renderizarHistorialMensual(); // Re-renderizar con el nuevo mes
+
+    // Actualizar texto del botón/selector
+    const opciones = { year: 'numeric', month: 'long' };
+    const nombreMes = fechaRef.toLocaleDateString('es-ES', opciones);
+    const botonHistorial = document.querySelector('.btn-link');
+    if (botonHistorial) {
+        botonHistorial.textContent = `▶ Historial (${nombreMes})`;
+    }
+}
+
 // Función para calcular horas semanales
 function calcularHorasSemanales() {
     const hoy = new Date();
@@ -233,7 +256,7 @@ function renderizarHistorialHoras() {
     });
 }
 
-// Función: renderizarHistorialMensual – Muestra todas las horas del mes actual
+// Función: renderizarHistorialMensual – Muestra horas del mes actual o del mes seleccionado
 function renderizarHistorialMensual() {
     const lista = document.getElementById('lista-historial-mensual');
     if (!lista) return;
@@ -245,20 +268,32 @@ function renderizarHistorialMensual() {
         return;
     }
 
-    const hoy = new Date();
-    const mesActual = hoy.getMonth();
-    const añoActual = hoy.getFullYear();
-
-    const registrosMes = window.horasTrabajadas.filter(registro => {
-        if (!registro.fecha) return false;
-        const fecha = new Date(registro.fecha);
-        return !isNaN(fecha.getTime()) &&
-               fecha.getMonth() === mesActual &&
-               fecha.getFullYear() === añoActual;
-    });
+    let registrosMes;
+    if (historialMesSeleccionado) {
+        // Filtrar por el mes seleccionado
+        registrosMes = window.horasTrabajadas.filter(registro => {
+            if (!registro.fecha) return false;
+            const fecha = new Date(registro.fecha);
+            return !isNaN(fecha.getTime()) &&
+                   fecha.getMonth() === historialMesSeleccionado.mes &&
+                   fecha.getFullYear() === historialMesSeleccionado.año;
+        });
+    } else {
+        // Comportamiento original: mes actual
+        const hoy = new Date();
+        const mesActual = hoy.getMonth();
+        const añoActual = hoy.getFullYear();
+        registrosMes = window.horasTrabajadas.filter(registro => {
+            if (!registro.fecha) return false;
+            const fecha = new Date(registro.fecha);
+            return !isNaN(fecha.getTime()) &&
+                   fecha.getMonth() === mesActual &&
+                   fecha.getFullYear() === añoActual;
+        });
+    }
 
     if (registrosMes.length === 0) {
-        lista.innerHTML = '<li class="registro-hora"><em>No hay registros este mes.</em></li>';
+        lista.innerHTML = '<li class="registro-hora"><em>No hay registros para este periodo.</em></li>';
         return;
     }
 
@@ -290,6 +325,7 @@ function renderizarHistorialMensual() {
         lista.appendChild(li);
     });
 }
+
 
 // Formatear fecha legible: "22 abr 2025"
 function formatearFechaLegible(fechaStr) {
@@ -327,6 +363,11 @@ function toggleHistorialMensual() {
     if (contenedor.classList.contains('oculto')) {
         contenedor.classList.remove('oculto');
         boton?.classList.add('expandido');
+        // Si no se ha seleccionado un mes, mostrar el mes actual por defecto
+        if (!historialMesSeleccionado) {
+             // Opcional: puedes llamar a setHistorialMes(0) aquí para asegurar que se muestra el mes actual
+             // setHistorialMes(0); 
+        }
         renderizarHistorialMensual();
     } else {
         contenedor.classList.add('oculto');
@@ -365,3 +406,37 @@ function inicializarApp() {
 
 // Iniciar cuando el DOM esté listo
 document.addEventListener('DOMContentLoaded', inicializarApp);
+
+/*
+Para que las nuevas funciones de selección de mes funcionen, 
+debes actualizar tu index.html. Agrega los siguientes botones 
+justo antes del div con id="contenedor-historial-mensual":
+
+<!-- Selector de mes para el historial -->
+<div class="selector-mes-historial" style="margin-bottom: 10px; display: none;" id="selector-mes-historial">
+  <button onclick="setHistorialMes(0)">Este mes</button>
+  <button onclick="setHistorialMes(-1)">Mes anterior</button>
+  <button onclick="setHistorialMes(-2)">Hace 2 meses</button>
+</div>
+
+Y modifica el botón de "Historial Mensual" para que también muestre 
+el mes seleccionado. Puedes hacerlo actualizando su texto desde JS 
+como se hace en setHistorialMes, o simplemente usar un texto genérico 
+y dejar que JS lo cambie.
+
+Ejemplo de botón actualizado (en tu HTML actual):
+<button type="button" class="btn-link" onclick="toggleSelectorMes()">
+    ▶ Historial Mensual
+</button>
+
+Y agrega esta función en tu script o en un <script> en index.html:
+function toggleSelectorMes() {
+    const selector = document.getElementById('selector-mes-historial');
+    if (selector) {
+        selector.style.display = selector.style.display === 'none' ? 'block' : 'none';
+    }
+    // También puedes llamar a toggleHistorialMensual() aquí si quieres 
+    // que se abra el historial al mismo tiempo.
+    // toggleHistorialMensual();
+}
+*/

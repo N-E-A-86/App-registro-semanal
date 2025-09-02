@@ -7,6 +7,31 @@
     <link rel="stylesheet" href="styles.css" />
     <!-- Favicon opcional -->
     <link rel="icon" href="data:;base64,iVBORw0KGgo=">
+    <style>
+        /* Estilos básicos para el selector de mes del historial */
+        .selector-mes-historial {
+            margin-top: 10px;
+            margin-bottom: 15px;
+            padding: 10px;
+            background-color: var(--fondo-oscuro);
+            border-radius: 6px;
+            display: none; /* Inicialmente oculto */
+        }
+
+        .selector-mes-historial button {
+            margin: 0 5px 5px 0;
+            padding: 5px 10px;
+            background-color: var(--fondo-medio);
+            color: var(--texto-claro);
+            border: 1px solid var(--borde);
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .selector-mes-historial button:hover {
+            background-color: var(--acento-oscuro);
+        }
+    </style>
 </head>
 <body>
     <div class="container">
@@ -47,16 +72,24 @@
                     </ul>
                 </div>
 
+                <!-- Selector de mes para el historial -->
+                <div class="selector-mes-historial" id="selector-mes-historial">
+                    <button onclick="setHistorialMes(0)">Este mes</button>
+                    <button onclick="setHistorialMes(-1)">Mes anterior</button>
+                    <button onclick="setHistorialMes(-2)">Hace 2 meses</button>
+                </div>
+
                 <!-- Enlace para mostrar historial mensual -->
                 <div class="enlace-historial">
-                    <button type="button" class="btn-link" onclick="toggleHistorialMensual()">
+                    <!-- El texto se actualizará con JS -->
+                    <button type="button" class="btn-link" id="boton-toggle-historial" onclick="toggleHistorialMensualConSelector()">
                         ▶ Historial Mensual
                     </button>
                 </div>
 
                 <!-- Contenedor oculto del historial mensual -->
                 <div id="contenedor-historial-mensual" class="historial-mensual oculto">
-                    <p>Registros del mes actual</p>
+                    <p>Registros del periodo seleccionado</p>
                     <ul id="lista-historial-mensual" class="lista-horas">
                         <!-- Generado dinámicamente -->
                     </ul>
@@ -109,7 +142,7 @@
     </div>
 
     <!-- Firebase SDK: Compatibility Mode (v9+) -->
-   
+    <!-- Corregido: Eliminados los espacios extras al final de las URLs -->
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 
@@ -182,6 +215,58 @@
     <script>
         // Asegurar que guardarDatos() esté disponible globalmente
         window.guardarDatos = guardarDatos;
+
+        // Función para alternar el historial mensual y el selector de mes
+        function toggleHistorialMensualConSelector() {
+            const contenedor = document.getElementById('contenedor-historial-mensual');
+            const selector = document.getElementById('selector-mes-historial');
+            const boton = document.getElementById('boton-toggle-historial');
+
+            if (!contenedor || !selector || !boton) return;
+
+            if (contenedor.classList.contains('oculto')) {
+                // Mostrar ambos
+                contenedor.classList.remove('oculto');
+                selector.style.display = 'block';
+                boton.classList.add('expandido');
+                
+                // Si no se ha seleccionado un mes, mostrar el mes actual por defecto
+                // Esto llamará a renderizarHistorialMensual() internamente
+                if (!window.historialMesSeleccionado) {
+                    // Opcional: puedes llamar a setHistorialMes(0) aquí para asegurar que se muestra el mes actual
+                    // setHistorialMes(0); 
+                    // Como toggleHistorialMensualConSelector no existe en script.js, llamamos directamente
+                    // a la lógica de toggleHistorialMensual y luego renderizamos.
+                    // Pero como queremos integrar el selector, mejor manejamos todo aquí.
+                    
+                    // Llamar a la función del script.js para renderizar si es necesario
+                    // o simplemente asegurarnos de que se llama al final.
+                    // La lógica más robusta es llamar a renderizarHistorialMensual() aquí
+                    // si ya está definida.
+                    if (typeof window.renderizarHistorialMensual === 'function') {
+                         // Si no hay un mes seleccionado, forzar el mes actual
+                        if (!window.historialMesSeleccionado) {
+                             window.setHistorialMes(0); // Esto también renderiza
+                        } else {
+                             window.renderizarHistorialMensual();
+                        }
+                    }
+                } else {
+                     // Si ya hay un mes seleccionado, solo renderizamos
+                     if (typeof window.renderizarHistorialMensual === 'function') {
+                         window.renderizarHistorialMensual();
+                     }
+                }
+            } else {
+                // Ocultar ambos
+                contenedor.classList.add('oculto');
+                selector.style.display = 'none';
+                boton.classList.remove('expandido');
+            }
+        }
+
+        // Exponer la función globalmente para que el HTML pueda llamarla
+        window.toggleHistorialMensualConSelector = toggleHistorialMensualConSelector;
     </script>
 </body>
 </html>
