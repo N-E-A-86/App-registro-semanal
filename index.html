@@ -90,8 +90,9 @@
                 </form>
 
                 <div class="resumen-horas">
-                    <h3>Resumen Semanal</h3>
+                    <h3>Resumen Semanal y Mensual</h3>
                     <p>Total de horas esta semana: <span id="total-horas">0</span></p>
+                    <p>Total de horas este mes: <span id="total-horas-mes">0</span></p>
                 </div>
 
                 <div class="historial-horas">
@@ -201,15 +202,13 @@
                     const data = doc.data();
                     window.horasTrabajadas = data.horasTrabajadas || [];
                     window.tareas = data.tareas || [];
-                    console.log("✅ Datos cargados de la nube:", data);
                 } else {
-                    console.log("📭 No hay datos. Iniciando vacío.");
                     window.horasTrabajadas = [];
                     window.tareas = [];
                 }
                 document.dispatchEvent(new Event('datosCargados'));
             } catch (e) {
-                console.error("❌ Error al cargar de Firestore:", e);
+                console.error("Error al cargar de Firestore:", e);
                 window.horasTrabajadas = [];
                 window.tareas = [];
                 document.dispatchEvent(new Event('datosCargados'));
@@ -225,9 +224,8 @@
                     tareas: window.tareas,
                     updatedAt: new Date()
                 });
-                console.log("✅ Datos guardados en la nube");
             } catch (e) {
-                console.error("❌ Error al guardar en Firestore:", e);
+                console.error("Error al guardar en Firestore:", e);
             }
         }
     </script>
@@ -254,7 +252,6 @@
                 currentUserId = null;
                 loginContainer.style.display = 'block';
                 appContainer.style.display = 'none';
-                // Limpiar datos al cerrar sesión
                 window.horasTrabajadas = [];
                 window.tareas = [];
                 document.dispatchEvent(new Event('datosCargados'));
@@ -277,10 +274,8 @@
             auth.signOut();
         });
 
-        // Asegurar que guardarDatos() esté disponible globalmente
         window.guardarDatos = guardarDatos;
 
-        // Función para alternar el historial mensual y el selector de mes
         function toggleHistorialMensualConSelector() {
             const contenedor = document.getElementById('contenedor-historial-mensual');
             const selector = document.getElementById('selector-mes-historial');
@@ -295,7 +290,7 @@
                 
                 if (typeof window.renderizarHistorialMensual === 'function') {
                     if (!window.historialMesSeleccionado) {
-                         window.setHistorialMes(0); 
+                         if (typeof window.setHistorialMes === 'function') window.setHistorialMes(0); 
                     } else {
                          window.renderizarHistorialMensual();
                     }
