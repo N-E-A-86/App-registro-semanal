@@ -18,6 +18,20 @@ let progresoFill;
 // Variable para el historial mensual
 let historialMesSeleccionado = null; // null para mes actual
 
+/**
+ * Parsea una cadena de fecha YYYY-MM-DD como una fecha local a medianoche.
+ * Esto evita problemas de zona horaria donde la fecha puede cambiar al día anterior.
+ * @param {string} dateString - La fecha en formato YYYY-MM-DD.
+ * @returns {Date}
+ */
+function parseDateAsLocal(dateString) {
+    if (!dateString) return null;
+    const [year, month, day] = dateString.split('-').map(Number);
+    // Usar new Date(year, monthIndex, day) para crear una fecha en la zona horaria local.
+    return new Date(year, month - 1, day, 12); // Use noon to be safe
+}
+
+
 // --- Funciones para el selector de mes del historial ---
 // mesOffset: 0 para mes actual, -1 para mes anterior, -2 para dos meses antes, etc.
 function setHistorialMes(mesOffset) {
@@ -41,18 +55,27 @@ function setHistorialMes(mesOffset) {
 // Función para calcular horas semanales
 function calcularHorasSemanales() {
     const hoy = new Date();
-    const diaSemana = hoy.getDay();
+    const diaSemana = hoy.getDay(); // 0 (Domingo) - 6 (Sábado)
+    
+    // Ajustar para que la semana comience en Lunes (1)
     const inicioSemana = new Date(hoy);
+    const diaOffset = (diaSemana === 0) ? 6 : diaSemana - 1; // Lunes es 0, Domingo es 6
+    inicioSemana.setDate(hoy.getDate() - diaOffset);
     inicioSemana.setHours(0, 0, 0, 0);
-    inicioSemana.setDate(hoy.getDate() - (diaSemana === 0 ? 6 : diaSemana - 1)); // Lunes
+
+    const finSemana = new Date(inicioSemana);
+    finSemana.setDate(inicioSemana.getDate() + 6);
+    finSemana.setHours(23, 59, 59, 999);
+
 
     let totalMinutos = 0;
 
     window.horasTrabajadas.forEach(registro => {
-        const fechaRegistro = new Date(registro.fecha);
-        fechaRegistro.setHours(0, 0, 0, 0);
+        const fechaRegistro = parseDateAsLocal(registro.fecha);
+        if (!fechaRegistro) return;
 
-        if (fechaRegistro >= inicioSemana && fechaRegistro <= hoy) {
+
+        if (fechaRegistro >= inicioSemana && fechaRegistro <= finSemana) {
             const [hEntrada, mEntrada] = registro.horaEntrada.split(':').map(Number);
             const [hSalida, mSalida] = registro.horaSalida.split(':').map(Number);
 
@@ -84,8 +107,8 @@ function agregarHora(evento) {
         return;
     }
 
-    const entrada = new Date(`2023-01-01 ${horaEntrada}`);
-    const salida = new Date(`2023-01-01 ${horaSalida}`);
+    const entrada = new Date(`2023-01-01T${horaEntrada}`);
+    const salida = new Date(`2023-01-01T${horaSalida}`);
 
     if (salida <= entrada) {
         alert('La hora de salida debe ser mayor a la de entrada.');
@@ -113,7 +136,9 @@ function agregarHora(evento) {
     }
 
     // Guardar en la nube
-    guardarDatos();
+    if (typeof guardarDatos === 'function') {
+        guardarDatos();
+    }
 
     alert('Hora registrada con éxito.');
 }
@@ -140,7 +165,9 @@ function agregarTarea(evento) {
     actualizarProgreso();
 
     // Guardar en la nube
-    guardarDatos();
+    if (typeof guardarDatos === 'function') {
+        guardarDatos();
+    }
 
     alert('Tarea agregada.');
 }
@@ -149,6 +176,10 @@ function agregarTarea(evento) {
 function renderizarTareas() {
     if (!listaTareas) return;
     listaTareas.innerHTML = '';
+
+    if (!window.tareas || window.tareas.length === 0) {
+        return;
+    }
 
     window.tareas.forEach(t => {
         const li = document.createElement('li');
@@ -172,7 +203,9 @@ function toggleCompletada(id) {
         t.completada = !t.completada;
         renderizarTareas();
         actualizarProgreso();
-        guardarDatos();
+        if (typeof guardarDatos === 'function') {
+            guardarDatos();
+        }
     }
 }
 
@@ -181,12 +214,15 @@ function eliminarTarea(id) {
     window.tareas = window.tareas.filter(t => t.id !== id);
     renderizarTareas();
     actualizarProgreso();
-    guardarDatos();
+    if (typeof guardarDatos === 'function') {
+        guardarDatos();
+    }
 }
 
 // Actualizar progreso
 function actualizarProgreso() {
-    if(!porcentajeProgresoElement || !tareasCompletadasElement || !totalTareasElement || !progresoFill) return;
+    if (!porcentajeProgresoElement || !tareasCompletadasElement || !totalTareasElement || !progresoFill) return;
+
     const total = window.tareas.length;
     const completadas = window.tareas.filter(t => t.completada).length;
     const porcentaje = total ? Math.round((completadas / total) * 100) : 0;
@@ -217,12 +253,17 @@ function renderizarHistorialHoras() {
     const hoy = new Date();
     const diaSemana = hoy.getDay();
     const inicioSemana = new Date(hoy);
+    const diaOffset = (diaSemana === 0) ? 6 : diaSemana - 1;
+    inicioSemana.setDate(hoy.getDate() - diaOffset);
     inicioSemana.setHours(0, 0, 0, 0);
-    inicioSemana.setDate(hoy.getDate() - (diaSemana === 0 ? 6 : diaSemana - 1));
+
+    const finSemana = new Date(inicioSemana);
+    finSemana.setDate(inicioSemana.getDate() + 6);
+    finSemana.setHours(23, 59, 59, 999);
 
     const registrosSemana = window.horasTrabajadas.filter(registro => {
-        const fecha = new Date(registro.fecha);
-        return fecha >= inicioSemana && fecha <= hoy;
+        const fecha = parseDateAsLocal(registro.fecha);
+        return fecha && fecha >= inicioSemana && fecha <= finSemana;
     });
 
     if (registrosSemana.length === 0) {
@@ -230,11 +271,11 @@ function renderizarHistorialHoras() {
         return;
     }
 
-    registrosSemana.sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
+    registrosSemana.sort((a, b) => parseDateAsLocal(b.fecha) - parseDateAsLocal(a.fecha));
 
     registrosSemana.forEach(registro => {
-        const entrada = new Date(`2023-01-01 ${registro.horaEntrada}`);
-        const salida = new Date(`2023-01-01 ${registro.horaSalida}`);
+        const entrada = new Date(`2023-01-01T${registro.horaEntrada}`);
+        const salida = new Date(`2023-01-01T${registro.horaSalida}`);
         const minutos = Math.floor((salida - entrada) / (1000 * 60));
         if (minutos <= 0) return;
 
@@ -273,21 +314,19 @@ function renderizarHistorialMensual() {
     if (historialMesSeleccionado) {
         // Filtrar por el mes seleccionado
         registrosMes = window.horasTrabajadas.filter(registro => {
-            if (!registro.fecha) return false;
-            const fecha = new Date(registro.fecha);
-            return !isNaN(fecha.getTime()) &&
+            const fecha = parseDateAsLocal(registro.fecha);
+            return fecha &&
                    fecha.getMonth() === historialMesSeleccionado.mes &&
                    fecha.getFullYear() === historialMesSeleccionado.año;
         });
     } else {
-        // Comportamiento original: mes actual
+        // Comportamiento por defecto: mes actual
         const hoy = new Date();
         const mesActual = hoy.getMonth();
         const añoActual = hoy.getFullYear();
         registrosMes = window.horasTrabajadas.filter(registro => {
-            if (!registro.fecha) return false;
-            const fecha = new Date(registro.fecha);
-            return !isNaN(fecha.getTime()) &&
+            const fecha = parseDateAsLocal(registro.fecha);
+            return fecha &&
                    fecha.getMonth() === mesActual &&
                    fecha.getFullYear() === añoActual;
         });
@@ -298,11 +337,11 @@ function renderizarHistorialMensual() {
         return;
     }
 
-    registrosMes.sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
+    registrosMes.sort((a, b) => parseDateAsLocal(b.fecha) - parseDateAsLocal(a.fecha));
 
     registrosMes.forEach(registro => {
-        const entrada = new Date(`2023-01-01 ${registro.horaEntrada}`);
-        const salida = new Date(`2023-01-01 ${registro.horaSalida}`);
+        const entrada = new Date(`2023-01-01T${registro.horaEntrada}`);
+        const salida = new Date(`2023-01-01T${registro.horaSalida}`);
         if (isNaN(entrada.getTime()) || isNaN(salida.getTime())) return;
 
         const minutos = Math.floor((salida - entrada) / (1000 * 60));
@@ -330,10 +369,13 @@ function renderizarHistorialMensual() {
 
 // Formatear fecha legible: "22 abr 2025"
 function formatearFechaLegible(fechaStr) {
+    if (!fechaStr) return 'Fecha inválida';
     const opciones = { day: '2-digit', month: 'short', year: 'numeric' };
-    const fecha = new Date(fechaStr);
+    const fecha = parseDateAsLocal(fechaStr);
     if (isNaN(fecha.getTime())) return 'Fecha inválida';
-    return new Intl.DateTimeFormat('es-ES', opciones).format(fecha).replace('.', '');
+    
+    // El 'replace' es para un formato específico sin puntos, como "22 abr 2025" en lugar de "22 abr. 2025"
+    return new Intl.DateTimeFormat('es-ES', opciones).format(fecha).replace(/\./g, '');
 }
 
 // Eliminar registro de horas
@@ -350,31 +392,20 @@ function eliminarRegistroHora(id) {
             renderizarHistorialMensual();
         }
 
-        guardarDatos();
-    }
-}
-
-// Mostrar/ocultar historial mensual
-function toggleHistorialMensual() {
-    const contenedor = document.getElementById('contenedor-historial-mensual');
-    const boton = document.querySelector('.btn-link');
-
-    if (!contenedor) return;
-
-    if (contenedor.classList.contains('oculto')) {
-        contenedor.classList.remove('oculto');
-        boton?.classList.add('expandido');
-        if (!historialMesSeleccionado) {
-             if (typeof window.setHistorialMes === 'function') {
-                window.setHistorialMes(0);
-             }
+        if (typeof guardarDatos === 'function') {
+            guardarDatos();
         }
-        renderizarHistorialMensual();
-    } else {
-        contenedor.classList.add('oculto');
-        boton?.classList.remove('expandido');
     }
 }
+
+// Esta función ya existe en index.html, pero la duplicamos aquí como referencia
+// de su existencia global para el linter.
+if (typeof window.toggleHistorialMensualConSelector === 'undefined') {
+    window.toggleHistorialMensualConSelector = function() {
+        console.warn("toggleHistorialMensualConSelector no está definido globalmente todavía.");
+    };
+}
+
 
 // Inicializar app
 function inicializarApp() {
@@ -396,6 +427,7 @@ function inicializarApp() {
 
     // Escuchar cuando los datos de Firestore estén listos
     document.addEventListener('datosCargados', () => {
+        console.log("🔄 Datos recibidos de la nube, renderizando...");
         calcularHorasSemanales();
         renderizarTareas();
         actualizarProgreso();
@@ -410,3 +442,6 @@ document.addEventListener('DOMContentLoaded', inicializarApp);
 
 // Exportar funciones para que estén disponibles globalmente
 window.setHistorialMes = setHistorialMes;
+window.toggleCompletada = toggleCompletada;
+window.eliminarTarea = eliminarTarea;
+window.eliminarRegistroHora = eliminarRegistroHora;
