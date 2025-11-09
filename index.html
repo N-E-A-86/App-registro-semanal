@@ -177,7 +177,7 @@
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 
     <script>
-        // configuración de Firebase
+        // Configuración de Firebase
         const firebaseConfig = {
             apiKey: "AIzaSyAOT2ZR3L0LI8oVfQPnIKzgWhU4sjlXS1o",
             authDomain: "mi-dashboard-trabajo.firebaseapp.com",
@@ -191,9 +191,11 @@
         firebase.initializeApp(firebaseConfig);
         const auth = firebase.auth();
         const db = firebase.firestore();
-        let currentUserId = null; // Variable para guardar el ID del usuario logueado
 
-        // Cargar datos desde Firestore
+        // Declarar currentUserId como variable global accesible por ambos scripts
+        let currentUserId = null;
+
+        // Cargar datos desde Firestore y hacer la función global
         async function cargarDatos(userId) {
             if (!userId) return;
             try {
@@ -214,8 +216,9 @@
                 document.dispatchEvent(new Event('datosCargados'));
             }
         }
+        window.cargarDatos = cargarDatos; // Hacerla global
 
-        // Guardar datos en Firestore
+        // Guardar datos en Firestore y hacer la función global
         async function guardarDatos() {
             if (!currentUserId || !window.horasTrabajadas || !window.tareas) return;
             try {
@@ -228,9 +231,10 @@
                 console.error("Error al guardar en Firestore:", e);
             }
         }
+        window.guardarDatos = guardarDatos; // Hacerla global
     </script>
 
-    <!-- Tu script principal -->
+    <!-- Tu script principal (DEBE IR DESPUÉS DE LA CONFIGURACIÓN DE FIREBASE) -->
     <script src="script.js"></script>
     
     <script>
@@ -243,13 +247,13 @@
         auth.onAuthStateChanged(async (user) => {
             if (user) {
                 // Usuario está logueado
-                currentUserId = user.uid;
+                currentUserId = user.uid; // Actualiza la variable global
                 loginContainer.style.display = 'none';
                 appContainer.style.display = 'block';
-                await cargarDatos(currentUserId);
+                await window.cargarDatos(currentUserId); // Usa la función global
             } else {
                 // Usuario no está logueado
-                currentUserId = null;
+                currentUserId = null; // Reinicia la variable global
                 loginContainer.style.display = 'block';
                 appContainer.style.display = 'none';
                 window.horasTrabajadas = [];
@@ -274,34 +278,10 @@
             auth.signOut();
         });
 
-        window.guardarDatos = guardarDatos;
-
-        function toggleHistorialMensualConSelector() {
-            const contenedor = document.getElementById('contenedor-historial-mensual');
-            const selector = document.getElementById('selector-mes-historial');
-            const boton = document.getElementById('boton-toggle-historial');
-
-            if (!contenedor || !selector || !boton) return;
-
-            if (contenedor.classList.contains('oculto')) {
-                contenedor.classList.remove('oculto');
-                selector.style.display = 'block';
-                boton.classList.add('expandido');
-                
-                if (typeof window.renderizarHistorialMensual === 'function') {
-                    if (!window.historialMesSeleccionado) {
-                         if (typeof window.setHistorialMes === 'function') window.setHistorialMes(0); 
-                    } else {
-                         window.renderizarHistorialMensual();
-                    }
-                }
-            } else {
-                contenedor.classList.add('oculto');
-                selector.style.display = 'none';
-                boton.classList.remove('expandido');
-            }
-        }
-        window.toggleHistorialMensualConSelector = toggleHistorialMensualConSelector;
+        // La función toggleHistorialMensualConSelector ahora se define y se hace global
+        // en script.js, así que puedes eliminarla de aquí.
+        // Si aún la necesitas aquí, asegúrate de que no haya duplicación.
+        // REMOVED: window.toggleHistorialMensualConSelector = toggleHistorialMensualConSelector;
     </script>
 </body>
 </html>

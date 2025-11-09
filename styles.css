@@ -10,7 +10,7 @@
     --acento: #00bfa5;
     --acento-oscuro: #008e76;
     --error: #cf3636;
-    --borde: #333333;
+    --borde: #1258db;
     --sombra: rgba(0, 0, 0, 0.5);
 }
 
@@ -314,46 +314,58 @@ body {
 }
 
 
-/* === SECCIÓN: PROGRESO === */
+/* === SECCIÓN: PROGRESO - MODERNA === */
 .progreso-contenedor {
     display: flex;
     flex-direction: column;
     align-items: center;
-    margin: 20px 0;
+    margin: 30px 0; /* Un poco más de margen */
+    padding: 20px;
+    background-color: var(--fondo-oscuro); /* Fondo sutil para el contenedor */
+    border-radius: 12px; /* Bordes más redondeados */
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3); /* Sombra suave */
 }
 
 .progreso-circular {
-    transform: rotate(-90deg);
+    transform: rotate(-90deg); /* Mantenemos la rotación */
+    width: 160px; /* Tamaño ligeramente más grande */
+    height: 160px;
+    filter: drop-shadow(0 0 5px rgba(0, 191, 165, 0.5)); /* Pequeña sombra de color en el círculo de progreso */
+
 }
 
 .fondo-circular {
     fill: none;
-    stroke: var(--borde);
-    stroke-width: 10;
+    /*stroke: var(--borde); /* Color de fondo del círculo */
+      stroke: #f70505; /* <-- Usa el color directo por ahora */
+    stroke-width: 12; /* Grosor ligeramente mayor */
+    opacity: 0.2; /* Lo hacemos un poco más tenue */
+    
 }
 
 .progreso-circular-fill {
     fill: none;
-    stroke: var(--acento);
-    stroke-width: 10;
+    stroke: #00bfa5; /* Color por defecto, el JS lo cambiará */
+    stroke-width: 12; /* Mismo grosor que el fondo */
     stroke-linecap: round;
-    stroke-dasharray: 377;
-    stroke-dashoffset: 377;
-    transition: stroke-dashoffset 0.8s ease;
+    /* ELIMINADAS: stroke-dasharray y stroke-dashoffset del CSS, ahora solo JS los controla */
+    transition: stroke-dashoffset 0.8s ease-out, stroke 0.4s ease-in-out; /* Transición más sofisticada para el color y el progreso */
 }
 
 .porcentaje {
     position: relative;
-    top: -110px;
-    font-size: 1.5rem;
-    font-weight: bold;
-    color: var(--acento);
+    top: -115px; /* Ajuste para centrar visualmente */
+    font-size: 2.2rem; /* Porcentaje más grande */
+    font-weight: 700; /* Más negrita */
+    color: var(--acento); /* Color del porcentaje, el JS lo actualizará con los colores del círculo si quieres */
+    text-shadow: 0 0 5px rgba(0, 0, 0, 0.2); /* Sombra de texto sutil */
 }
 
 .progreso p {
     text-align: center;
     color: var(--texto-secundario);
-    margin-top: 10px;
+    margin-top: -90px; /* Ajuste para acercar el texto al círculo */
+    font-size: 0.95rem;
 }
 
 /* === FOOTER === */
